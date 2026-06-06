@@ -1,0 +1,111 @@
+/* ---------- Add Hospital Form ---------- */
+ .container2 {
+            color:black;
+            width: 60%;
+            height: 450px;
+            
+            background: rgb(242, 245, 244);
+            padding: 20px;
+          
+            box-shadow: 0 0 10px #d8d4d41a;
+           margin-left: 57px;
+        }
+form {
+   
+}
+
+/* Main wrapper */
+.d1 {
+    display: flex;
+    flex-direction: column;
+    
+}
+
+/* Row groups */
+.d2,
+.d3,
+.d4 {
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+}
+
+/* Make inputs take equal width */
+.d2 input,
+.d3 {
+    display: flex;
+  margin-left: 0%;
+ 
+}
+.select{
+    width: 90px;
+}
+.d5  {
+    display: flex;
+    gap: 3%;
+}
+
+/* Labels */
+label {
+    font-weight: 400;
+    display: block;
+    color: #444;
+    margin-top: 0%;
+}
+
+/* All inputs */
+input,
+select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    outline: none;
+    transition: 0.3s ease;
+}
+
+/* Input focus effect */
+input:focus,
+select:focus {
+    border-color: darkred;
+    box-shadow: 0 0 5px rgba(139, 0, 0, 0.3);
+}
+
+/* Buttons container */
+.btns {
+    margin-top: 4px;
+    display: flex;
+   gap: 2%;
+    
+}
+
+/* Buttons */
+button {
+    width: 75px;
+    padding: 8px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s ease;
+}
+
+/* Cancel Button */
+button[type="button"] {
+    background-color: #999;
+    color: white;;height: fit-content;
+}
+
+button[type="button"]:hover {
+    background-color: #777;
+}
+
+/* Submit Button */
+button[type="submit"] {
+    background-color: darkred;
+    color: white;;height: fit-content;
+}
+
+button[type="submit"]:hover {
+    background-color: crimson;
+}

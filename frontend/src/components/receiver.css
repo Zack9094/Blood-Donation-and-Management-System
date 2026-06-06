@@ -1,0 +1,99 @@
+/* Page Background */
+body {
+  background: linear-gradient(to right, #f8f9fa, #eef2f7);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Main Container */
+.container {
+  max-width: 700px;
+  margin: 40px auto;
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  
+}
+
+/* Title */
+.container h1 {
+  text-align: center;
+  color: #b30000;
+  margin-bottom: 25px;
+}
+
+/* Section Title */
+.section-title {
+  margin-top: 25px;
+  margin-bottom: 15px;
+  padding: 8px 12px;
+  background-color: #b30000;
+  color: white;
+  border-radius: 6px;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+}
+
+/* Inputs, Select, Textarea */
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  border: 1px solid #dcdcdc;
+  font-size: 14px;
+  transition: 0.3s ease;
+}
+
+/* Focus Effect */
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #b30000;
+  outline: none;
+  box-shadow: 0 0 6px rgba(179, 0, 0, 0.2);
+}
+
+/* Textarea Resize */
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Submit Button */
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #b30000;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+/* Hover Effect */
+.submit-btn:hover {
+  background-color: #8a0000;
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .container {
+    padding: 20px;
+    height: auto;
+  }
+
+  .container h1 {
+    font-size: 20px;
+  }
+}
+
+.div{
+    height: auto;
+}

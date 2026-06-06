@@ -1,0 +1,128 @@
+
+
+.D1{
+    background-color: brown;
+    width: 750px;
+    height: 600px;
+    margin-left: 7%;
+}
+.D2{
+    float: left;
+    
+}
+.header{
+    color: aliceblue;
+    
+}
+.profile-icon{
+    background-color: rgb(128, 36, 36);
+    padding: 2%;
+    float: left;
+    border-radius: 200px;
+    margin-left: 4%;
+   
+}
+.name{
+    font-weight:200;
+    font-style:normal;
+    font-size: large;
+   
+}
+.d1{
+    font-style: normal;
+    font-size:small;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: aliceblue;
+    float: left;
+    margin-top: 0%;
+    margin-left: 0%;
+    line-height: 30px;
+    
+}
+.d11{
+    margin-top: 120px;
+}
+.d12{
+    border-color: aliceblue;
+    border: solid 0.3px;
+    margin-left: 30px;
+    padding: 4px;
+    
+}
+.reqDetails{
+    font-style: normal;
+    font-size:small;
+    font-weight: lighter;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: aliceblue;
+    float: left;
+    padding-top: 17px;
+    margin-left: 0%;
+    line-height: 20px;
+    list-style: none;
+
+}
+
+.D2{
+    
+}
+.main{
+    margin-top: 1%;
+    margin-bottom: 3%;
+    background-color: rgb(122, 31, 31);
+    padding: 2%;
+}
+.d21{
+    float: left;
+    font-size:small;
+}
+.d22{
+    margin-top: 0%;
+    float: right;
+    font-size:small;
+}
+h3{
+    align-content: center;
+}
+
+button{
+    display: flex;
+    padding: 4%;
+}
+.aprove{
+    float: left;
+    background-color: rgb(14, 200, 14);
+}
+.reject{
+    float: right;
+    background-color: rgb(255, 44, 44);
+}
+.aprove:hover{
+     background-color: rgb(38, 139, 38);
+}
+.reject:hover{
+    background-color: rgb(246, 108, 108);
+}
+
+
+.close{
+    font-weight: lighter;
+    font-size: large;
+    float: right;
+    margin-left: 37px;
+   width: 15px;
+   height: 15px;
+   padding-top: 8px;
+   padding-left: 15px;
+   padding-right: 15px;
+   padding-bottom: 15px;
+   margin-bottom: 0%;
+   align-items: center;
+   color: #171414;
+   margin-right: 0%;
+}
+.close:hover{
+    border: black 1px;
+    background-color: hsl(0, 89%, 60%);
+    color: #f4f6f8;
+}

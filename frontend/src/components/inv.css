@@ -1,0 +1,61 @@
+
+        @keyframes floatUpDown {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+  
+  .container3 {
+            color:black;
+            width: 60%;
+            height: 350px;
+            margin: 40px auto;
+            background: rgb(242, 245, 244);
+            padding: 20px;
+            
+            box-shadow: 0 0 10px #d8d4d41a;
+           animation: floatUpDown 2s ease-in-out infinite;
+        }
+        .div2{
+             
+        }
+        .d11{
+            margin-bottom: 10px;
+            margin-top: 0%;
+        }
+
+        .d11 input{
+            width:80%;
+            border-radius: 0%;
+            border-color: none;
+        }
+        
+        .d11 label{
+            font-weight: 400;
+            font-size: medium;
+            margin-right: 27px;
+            
+        }
+        .cs{
+            float: right;
+            padding: 15px;
+            gap: 5px;
+            display: flex;
+        }
+        .cs1{
+            padding: 5px;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+        .cs1:hover{
+            background-color: #ccc;
+        }
+       .d11 input{
+           margin-right: 5%;
+        }

@@ -1,0 +1,37 @@
+.D1{
+    background-color: brown;
+    width: 700px;
+    height: 500px;
+    
+}
+.D2{
+    float: left;
+}
+.profile-icon{
+    background-color: rgb(128, 36, 36);
+    padding: 2%;
+    float: left;
+    border-radius: 200px;
+    margin-left: 4%;
+}
+.donor{
+    padding-top: 40px;
+    color:azure;
+    line-height: 24px;
+}
+.name{
+    font-weight:200;
+    font-style:normal;
+    font-size: large;
+   
+}
+.d1{
+    font-style: normal;
+    font-size:medium;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: aliceblue;
+    float: left;
+    padding-top: 17px;
+    margin-left: 0%;
+    line-height: 37px;
+}
