@@ -153,3 +153,23 @@ Interested in Full-Stack Development, Software Engineering, and Artificial Intel
 ---
 
 ⭐ If you find this project useful, consider giving this repository a star!
+
+## 📸 Application Screenshots
+
+### Home Page
+![Home Page](screenshots/home-page.png)
+
+### Login Page
+![Login Page](screenshots/login-page.png)
+
+### User Dashboard
+![User Dashboard](screenshots/user-dashboard.png)
+
+### Donor Registration
+![Donor Registration](screenshots/donor-registration-form.png)
+
+### Blood Inventory
+![Blood Inventory](screenshots/blood-inventory-list.png)
+
+### Donation History
+![Donation History](screenshots/donation-history.png)
