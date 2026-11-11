@@ -59,3 +59,170 @@
        .d11 input{
            margin-right: 5%;
         }
+
+
+
+/* ================= Floating Animation ================= 
+
+@keyframes floatUpDown {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+
+/* ================= Main Form Container ================= 
+
+.container3 {
+  width: 60%;
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 30px;
+
+  background: #ffffff;
+  color: #333;
+
+  border-radius: 15px;
+  border-top: 6px solid #b30000;
+
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+
+  animation: floatUpDown 3s ease-in-out infinite;
+}
+
+
+/* ================= Form Heading ================= 
+
+.container3 h2,
+.container3 h3 {
+  text-align: center;
+  color: #b30000;
+  margin-bottom: 25px;
+}
+
+
+/* ================= Input Rows ================= 
+
+.d11 {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+
+/* Labels 
+
+.d11 label {
+  width: 140px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #444;
+}
+
+
+/* Inputs 
+
+.d11 input,
+.d11 select,
+.d11 textarea {
+  flex: 1;
+  padding: 10px 12px;
+
+  border: 1px solid #ccc;
+  border-radius: 8px;
+
+  font-size: 14px;
+
+  transition: 0.3s;
+}
+
+
+/* Focus Effect 
+
+.d11 input:focus,
+.d11 select:focus,
+.d11 textarea:focus {
+  outline: none;
+  border-color: #b30000;
+  box-shadow: 0 0 8px rgba(179,0,0,0.25);
+}
+
+
+/* ================= Button Section ================= 
+
+.cs {
+  margin-top: 25px;
+
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+
+/* Buttons 
+
+.cs1 {
+  padding: 10px 18px;
+
+  background: #b30000;
+  color: white;
+
+  border: none;
+  border-radius: 8px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+
+/* Hover 
+
+.cs1:hover {
+  background: #850000;
+  transform: translateY(-2px);
+}
+
+
+/* Cancel Button (Optional) 
+
+.cancel-btn {
+  background: #666;
+}
+
+.cancel-btn:hover {
+  background: #444;
+}
+
+
+/* ================= Responsive ================= 
+
+@media (max-width: 768px) {
+
+  .container3 {
+    width: 90%;
+    padding: 20px;
+  }
+
+  .d11 {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .d11 label {
+    width: 100%;
+    margin-bottom: 6px;
+  }
+
+  .cs {
+    justify-content: center;
+  }
+}*/

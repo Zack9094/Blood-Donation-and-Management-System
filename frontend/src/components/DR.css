@@ -1,4 +1,5 @@
-   body {
+
+           body {
             font-family: Arial, sans-serif;
             background-color: #f4f6f8;
         }
@@ -366,4 +367,530 @@ background-color: #cf1a1a;
            width: 450px;
 }
 
-      
+
+/* ===============================
+   GLOBAL PAGE STYLE
+================================ 
+
+body {
+  background: linear-gradient(to right, #f8f9fa, #eef2f7);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+
+/* Floating animation 
+@keyframes floatUpDown {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+
+/* ===============================
+   DONOR REGISTRATION CARD
+================================ 
+
+.container {
+  width: 90%;
+  max-width: 750px;
+  margin: 40px auto;
+  padding: 30px;
+
+  background: #ffffff;
+  color: #333;
+
+  border-radius: 15px;
+  border-top: 6px solid #b30000;
+
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+
+  animation: floatUpDown 3s ease-in-out infinite;
+}
+
+
+/* Form Title 
+
+.container h2,
+.container h1 {
+  text-align: center;
+  color: #b30000;
+  margin-bottom: 25px;
+  font-weight: 600;
+}
+
+
+/* ===============================
+   TWO COLUMN FORM
+================================ 
+
+.d1,
+.d2 {
+  width: 48%;
+}
+
+
+.d1 {
+  float: left;
+}
+
+
+.d2 {
+  float: right;
+}
+
+
+/* Clear float after columns 
+
+.container::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+
+/* ===============================
+   LABELS
+================================ 
+
+label {
+  display: block;
+  margin-top: 14px;
+  margin-bottom: 6px;
+
+  color: #444;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
+/* ===============================
+   INPUTS
+================================ 
+
+input,
+select,
+textarea {
+
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 10px 12px;
+
+  border: 1px solid #ccc;
+  border-radius: 8px;
+
+  font-size: 14px;
+
+  transition: 0.3s ease;
+
+  background: #fff;
+}
+
+
+/* Focus effect 
+
+input:focus,
+select:focus,
+textarea:focus {
+
+  outline: none;
+
+  border-color: #b30000;
+
+  box-shadow: 0 0 8px rgba(179,0,0,0.25);
+}
+
+
+/* Number fields 
+
+input[type="number"] {
+  width: 100%;
+}
+
+
+/* Text area 
+
+textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+
+/* ===============================
+   RADIO BUTTON SECTION
+================================ 
+
+.div2 {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+
+  margin-top: 15px;
+}
+
+
+.div2 label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  margin: 0;
+  font-weight: 500;
+}
+
+
+.rdobtn {
+  display: flex;
+  gap: 15px;
+}
+
+
+/* ===============================
+   SUBMIT BUTTON
+================================ 
+
+.smtbtn {
+
+  width: 100%;
+  margin-top: 25px;
+
+  padding: 12px;
+
+  background: #b30000;
+
+  color: white;
+
+  border: none;
+
+  border-radius: 8px;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.3s ease;
+}
+
+
+.smtbtn:hover {
+
+  background: #850000;
+
+  transform: translateY(-2px);
+}
+
+
+/* ===============================
+   CLOSE BUTTON
+================================ 
+
+.close {
+
+  float: right;
+
+  width: 35px;
+  height: 35px;
+
+  border-radius: 50%;
+
+  background: #f0f0f0;
+
+  color: #555;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  cursor: pointer;
+
+  transition: 0.3s;
+}
+
+
+.close:hover {
+
+  background: #e53935;
+
+  color: white;
+}
+
+
+/* ===============================
+   MOBILE VIEW
+================================ 
+
+@media (max-width: 768px) {
+
+  .container {
+    width: 95%;
+    padding: 20px;
+  }
+
+
+  .d1,
+  .d2 {
+    width: 100%;
+    float: none;
+  }
+
+
+  .div2 {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+}
+
+
+/* =====================================
+   TABLE CONTAINERS
+===================================== 
+
+.indiv {
+  width: 95%;
+  margin: 30px auto;
+  max-height: 600px;
+  overflow-y: auto;
+
+  background: white;
+  padding: 20px;
+
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+
+
+/* =====================================
+   HEADINGS
+===================================== 
+
+.hd1 {
+  width: fit-content;
+  margin: 20px auto;
+
+  padding: 12px 30px;
+
+  background: #b30000;
+  color: white;
+
+  font-size: 18px;
+  font-weight: bold;
+
+  border-radius: 25px;
+
+  box-shadow: 0 4px 10px rgba(179,0,0,0.3);
+}
+
+
+/* =====================================
+   TABLE STYLE
+===================================== 
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+
+/* Table Header 
+
+table th {
+  background: #b30000;
+  color: white;
+
+  padding: 14px;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  position: sticky;
+  top: 0;
+}
+
+
+/* Table Data 
+
+table td {
+  padding: 12px;
+  text-align: center;
+
+  color: #444;
+  border-bottom: 1px solid #eee;
+}
+
+
+/* Hover Effect 
+
+table tbody tr:hover {
+  background: #fff2f2;
+  transition: 0.3s;
+}
+
+
+/* =====================================
+   BLOOD STOCK TABLE
+===================================== 
+
+.tbl2 {
+  width: 90%;
+  margin: 30px auto;
+
+  border-radius: 15px;
+  overflow: hidden;
+
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+
+  animation: floatUpDown 3s ease-in-out infinite;
+}
+
+
+/* Padding 
+
+.tbl2 .t2,
+.tbl3 .t2 {
+  padding: 15px;
+}
+
+
+/* Stock Status Colors 
+
+.tbl2 .InStock {
+  background-color: #2e7d32;
+  color: white;
+}
+
+
+.tbl2 .LowStock {
+  background-color: #f57c00;
+  color: white;
+}
+
+
+.tbl2 .VeryLow {
+  background-color: #d32f2f;
+  color: white;
+}
+
+
+/* =====================================
+   SEARCH SECTION
+===================================== 
+
+.srch {
+  width: 90%;
+  margin: 25px auto;
+
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+
+/* Search Input 
+
+.search {
+  flex: 1;
+  height: 42px;
+
+  border: 1px solid #ccc;
+  border-radius: 25px;
+
+  padding: 0 18px;
+
+  font-size: 14px;
+}
+
+
+/* Search Button 
+
+.searchbtn {
+  height: 42px;
+
+  padding: 0 20px;
+
+  border: none;
+  border-radius: 25px;
+
+  background: #b30000;
+  color: white;
+
+  font-weight: bold;
+  cursor: pointer;
+
+  transition: 0.3s;
+}
+
+
+.searchbtn:hover {
+  background: #850000;
+}
+
+
+/* Filter Dropdown 
+
+.fltr {
+  height: 42px;
+
+  width: 160px;
+
+  border-radius: 25px;
+
+  border: 1px solid #ccc;
+
+  background: #b30000;
+  color: white;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+.fltr:hover {
+  background: #850000;
+}
+
+
+/* =====================================
+   RESPONSIVE TABLE
+===================================== 
+
+@media(max-width: 768px) {
+
+  .srch {
+    flex-direction: column;
+  }
+
+
+  .search,
+  .searchbtn,
+  .fltr {
+    width: 100%;
+  }
+
+
+  table {
+    font-size: 12px;
+  }
+
+
+  table th,
+  table td {
+    padding: 8px;
+  }
+
+}*/

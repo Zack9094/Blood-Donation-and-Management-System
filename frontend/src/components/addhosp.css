@@ -1,4 +1,3 @@
-/* ---------- Add Hospital Form ---------- */
  .container2 {
             color:black;
             width: 60%;
@@ -109,3 +108,183 @@ button[type="submit"] {
 button[type="submit"]:hover {
     background-color: crimson;
 }
+
+
+
+/*/* ================= ADD HOSPITAL PAGE =================
+
+.add-hospital-page {
+  min-height: 100vh;
+  background: #f4f6f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+}
+
+
+/* Main Form Card 
+.container2 {
+  width: 100%;
+  max-width: 800px;
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 18px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+  animation: floatCard 3s ease-in-out infinite;
+}
+
+
+/* Animation 
+@keyframes floatCard {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+
+/* Heading 
+.container2 h2 {
+  text-align: center;
+  color: #c62828;
+  margin-bottom: 25px;
+  font-size: 28px;
+}
+
+
+/* Form Layout 
+.d1 {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+
+/* Rows 
+.d2,
+.d3,
+.d4,
+.d5 {
+  display: flex;
+  gap: 20px;
+}
+
+
+/* Input Groups 
+.d2 div,
+.d3 div,
+.d4 div,
+.d5 div {
+  flex: 1;
+}
+
+
+/* Labels 
+.container2 label {
+  display: block;
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+
+/* Inputs & Select 
+.container2 input,
+.container2 select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #cccccc;
+  font-size: 14px;
+  transition: 0.3s ease;
+  box-sizing: border-box;
+}
+
+
+/* Focus Effect 
+.container2 input:focus,
+.container2 select:focus {
+  border-color: #c62828;
+  box-shadow: 0 0 8px rgba(198,40,40,0.25);
+  outline: none;
+}
+
+
+/* Button Area 
+.btns {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+
+/* Buttons 
+.btns button {
+  min-width: 120px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+
+/* Submit 
+button[type="submit"] {
+  background: #c62828;
+  color: white;
+}
+
+button[type="submit"]:hover {
+  background: #8e0000;
+  transform: translateY(-3px);
+}
+
+
+/* Cancel 
+button[type="button"] {
+  background: #9e9e9e;
+  color: white;
+}
+
+button[type="button"]:hover {
+  background: #616161;
+  transform: translateY(-3px);
+}
+
+
+/* Responsive 
+@media (max-width: 768px) {
+
+  .container2 {
+    padding: 20px;
+  }
+
+  .d2,
+  .d3,
+  .d4,
+  .d5 {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .btns {
+    flex-direction: column;
+  }
+
+  .btns button {
+    width: 100%;
+  }
+} */

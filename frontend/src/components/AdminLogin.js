@@ -1,78 +1,106 @@
-import react, { useEffect, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./SignUp.css";
 
-import './SignUp.css'
 const AdminLogin = () => {
-
-  // const [data,setData]=useState([]);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate();
-
-  useEffect(() => {
-
-  }, [navigate]);
 
   const collectData = async (e) => {
     e.preventDefault();
 
-    const res = await fetch(`http://localhost:50333/adminlogin`, {
-      method: 'post',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password })
-    });
+    try {
+      const res = await fetch("http://localhost:50334/adminlogin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const result = await res.json();
-   console.warn(result);
-    if (res.status === 200) {
-      localStorage.setItem("token", result.auth);
-      console.warn(result.auth)
-    
-      console.warn()
-      if (result.auth!=undefined) {
-         navigate('/home');
-      }else {
-      alert(result.result);
-    }
-    
-    } else {
-      alert(result.result);
-    }
+      const result = await res.json();
 
-  }
+      console.log(result);
+
+      if (res.status === 200 && result.auth) {
+        localStorage.setItem("token", result.auth);
+        navigate("/home");
+      } else {
+        alert(result.result || "Login failed");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Server error. Please try again later.");
+    }
+  };
 
   return (
     <div>
       <center>
-        <div class="wrapper" >
+        <div className="wrapper">
 
-          <div class="login">
-            <h1><span>Admin Login</span></h1>
+          <div className="login">
+            <h1>
+              <span>Admin Login</span>
+            </h1>
           </div>
-          <div class="input-box">
 
-            <label for="user_id" >Email</label>
-            <input type="email" id="user_id" class="input_field" required placeholder="Enter your email" value={email}
-              onChange={(e) => setEmail(e.target.value)} />
+          <form onSubmit={collectData}>
 
-          </div>
-          <div class="input-box">
-            <label for="user_password">Password</label>
-            <input type="password" id="user_password" class="input_field" required placeholder="Enter your password" value={password}
-              onChange={(e) => setPassword(e.target.value)} />
-          </div>
-          <label><input type="checkbox" />Remember me</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          <a class="a1" href="" >  forgot password?</a><br></br>
+            <div className="input-box">
+              <label htmlFor="user_id">Email</label>
+              <input
+                type="email"
+                id="user_id"
+                className="input_field"
+                required
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
 
-          <button class="btn" type="submit" onClick={collectData}>login</button>
+            <div className="input-box">
+              <label htmlFor="user_password">Password</label>
+              <input
+                type="password"
+                id="user_password"
+                className="input_field"
+                required
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
 
+            <div style={{ marginBottom: "15px" }}>
+              <label>
+                <input type="checkbox" /> Remember me
+              </label>
+              &nbsp;&nbsp;&nbsp;
+              <button
+                type="button"
+                className="a1"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Forgot password?
+              </button>
+            </div>
 
+            <button className="btn" type="submit">
+              Login
+            </button>
+
+          </form>
         </div>
       </center>
     </div>
-  )
+  );
+};
 
-}
 export default AdminLogin;

@@ -1,19 +1,31 @@
-// middleware/auth.js
+// middleware/verifyToken.js
 const jwt = require("jsonwebtoken");
+require("dotenv").config();
+
+const jwtkey = process.env.JWT_SECRET;
 
 const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization;
+  const authHeader = req.headers.authorization;
 
-  if (!token) {
-    return res.status(401).send("Access Denied");
+  if (!authHeader) {
+    return res.status(401).json({
+      message: "Access Denied. No token provided"
+    });
   }
 
   try {
-    const decoded = jwt.verify(token.replace("Bearer ", ""), SECRET_KEY);
-    req.user = decoded;   // 👈 attach user info to request
+    const token = authHeader.replace("Bearer ", "");
+
+    const decoded = jwt.verify(token, jwtkey);
+
+    req.user = decoded; // stores id and role from JWT
+
     next();
+
   } catch (err) {
-    return res.status(400).send("Invalid Token");
+    return res.status(401).json({
+      message: "Invalid or expired token"
+    });
   }
 };
 

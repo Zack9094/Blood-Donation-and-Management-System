@@ -1,4 +1,124 @@
-.D1{
+      .RD{float:none;
+            display: flex;
+            gap:200px;
+            margin-left: 130px;
+           }
+           #req:hover{
+             background-color: #a81f1f;
+           }
+           #don:hover{
+             background-color: #a81f1f;
+           }
+           .requests{
+            width:600px;
+            height: 60px;
+                display: flex;
+                gap:37px;
+                font-size: small;
+                line-height: 3%;
+                background-color: #fdd4ca;
+                margin-bottom: 1%;
+                margin-left: 27px;
+               
+                padding-top: 4px;
+               padding-left: 7%;
+           }
+
+           .requests:hover{
+            background-color: #ccc;
+           }
+           .view{
+            margin-right: 0%;
+            padding-right:0px ;
+            margin-left: 40px;
+            width: 40px;
+           height: 20px;
+           background-color: hsl(105, 72%, 41%);
+           padding: 2%;
+           padding-top: 15px;
+           padding-bottom: 1px;
+           margin-top: 2%;
+        }
+        .view:hover{background-color: hsl(105, 76%, 24%);}
+           .img{
+            background-color: #f6b2a1;
+            padding-top: 2%;
+            width: 40px;
+            padding-left: 2%;
+            margin-bottom: 2px;
+        }
+        .unit{
+            margin-top: 9px;
+            color: hwb(0 11% 1%);
+            font-weight: bold;
+           margin-right: 4%;
+        }
+        .info{
+            width:230px;
+            display:inline;
+            text-align: left;
+            color: #000;
+            font-weight:500;
+            font-size:11px;
+            line-height: 6px;
+           
+        }
+        #h{ margin-top: 5px;
+            font-weight: bold;
+            font-size:15px;
+        }
+          
+.blood-icon-20 {
+  width: 30px;
+  height: 30px;
+  background: #f31111;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(135deg);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  font-weight: bold;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+/* rotate text back so it looks straight */
+.blood-icon-20 span {
+  transform: rotate(-135deg);
+  font-size:200%;
+  font-weight: lighter;
+  margin-top: 2px;
+  
+}
+ 
+.hed{
+    display: flex;
+   font-size: medium;
+    font-weight: bold;
+   
+    
+    height: 37px;
+}
+#reqdon{
+background-color: #cf1a1a;
+ padding: 10px;
+ width: 50%;
+}
+#reqdon:hover{
+    background-color: #821212;
+}
+
+.donInfo{
+           
+           width: 450px;
+}
+
+   
+
+
+      .D1{
     background-color: brown;
     width: 700px;
     height: 500px;
@@ -35,3 +155,154 @@
     margin-left: 0%;
     line-height: 37px;
 }
+
+
+
+
+/* ================= DONOR PROFILE PAGE ================= 
+/*
+.donor-profile-container {
+  min-height: 100vh;
+  background: #f4f6f9;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+}
+
+
+/* Main Card 
+.D1 {
+  width: 750px;
+  background: linear-gradient(135deg, #c62828, #8e0000);
+  border-radius: 18px;
+  padding: 30px;
+  color: white;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+  animation: floatCard 3s ease-in-out infinite;
+}
+
+
+/* Floating animation 
+@keyframes floatCard {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+
+/* Top section 
+.D2 {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+
+/* Profile Icon 
+.profile-icon {
+  width: 110px;
+  height: 110px;
+  background: rgba(255,255,255,0.2);
+  border: 3px solid white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+/* Donor Details 
+.donor {
+  flex: 1;
+}
+
+
+/* Name 
+.name {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+
+/* Information 
+.d1 {
+  font-size: 16px;
+  line-height: 30px;
+  color: #f8f8f8;
+}
+
+
+/* Individual detail rows 
+.d1 p {
+  margin: 8px 0;
+}
+
+
+/* Blood Group Highlight 
+.blood-group {
+  display: inline-block;
+  background: white;
+  color: #c62828;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: bold;
+  margin-top: 12px;
+}
+
+
+/* Status badges 
+.status {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 7px 15px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+.available {
+  background: #2e7d32;
+}
+
+.unavailable {
+  background: #d32f2f;
+}
+
+
+/* Responsive Design 
+@media (max-width: 768px) {
+
+  .D1 {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .D2 {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-icon {
+    width: 90px;
+    height: 90px;
+  }
+
+  .name {
+    font-size: 22px;
+  }
+
+  .d1 {
+    font-size: 14px;
+    line-height: 24px;
+  }
+
+}*/

@@ -126,3 +126,251 @@ button{
     background-color: hsl(0, 89%, 60%);
     color: #f4f6f8;
 }
+
+
+/* ============================
+        MAIN CONTAINER
+============================= 
+
+.D1 {
+    width: 95%;
+    max-width: 1200px;
+    margin: 40px auto;
+    background: #ffffff;
+    border-radius: 20px;
+    display: flex;
+    gap: 25px;
+    padding: 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(25px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* ============================
+        LEFT PROFILE CARD
+============================= 
+
+.d1 {
+    width: 32%;
+    background: linear-gradient(135deg,#c62828,#e53935);
+    color: white;
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
+}
+
+
+.profile-icon {
+    width: 180px;
+    height: 180px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 50%;
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.d11 {
+    margin-top: 25px;
+}
+
+.d11 ul {
+    list-style: none;
+}
+
+.d11 li {
+    padding: 10px 0;
+    font-size: 16px;
+}
+
+
+.d12 {
+    margin-top: 25px;
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.d12 div {
+    margin: 10px 0;
+}
+
+
+/* ============================
+        RIGHT REQUEST SECTION
+============================= 
+
+.D2 {
+    width: 68%;
+}
+
+
+.header {
+    background: linear-gradient(90deg,#c62828,#e53935);
+    color: white;
+    padding: 18px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 22px;
+    margin-bottom: 20px;
+}
+
+
+.reqDetails {
+    list-style: none;
+    background: #fafafa;
+    border-radius: 15px;
+    padding: 20px;
+    color: #333;
+}
+
+
+.reqDetails li {
+    padding: 10px 0;
+    font-size: 15px;
+}
+
+
+.main {
+    background: #c62828;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+
+/* ============================
+    HEALTH + HISTORY BOXES
+============================= 
+
+.bottomSections {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+
+.d21,
+.d22 {
+    flex: 1;
+    background: #fafafa;
+    border-radius: 15px;
+}
+
+
+.d21 .reqDetails,
+.d22 .reqDetails {
+    background: transparent;
+}
+
+
+/* ============================
+        ACTION BUTTONS
+============================= 
+
+.D3 {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 25px;
+}
+
+
+.approve,
+.reject {
+    border: none;
+    padding: 12px 22px;
+    border-radius: 10px;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+
+.approve {
+    background: #2e7d32;
+}
+
+
+.approve:hover {
+    background: #1b5e20;
+}
+
+
+.reject {
+    background: #e53935;
+}
+
+
+.reject:hover {
+    background: #b71c1c;
+}
+
+
+/* ============================
+        CLOSE BUTTON
+============================= 
+
+.close {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: #eeeeee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+
+.close:hover {
+    background: #e53935;
+    color: white;
+}
+
+
+/* ============================
+        MOBILE RESPONSIVE
+============================= 
+
+@media(max-width: 850px) {
+
+    .D1 {
+        flex-direction: column;
+    }
+
+    .d1,
+    .D2 {
+        width: 100%;
+    }
+
+
+    .bottomSections {
+        flex-direction: column;
+    }
+
+
+    .D3 {
+        flex-direction: column;
+    }
+
+}
+
+*/

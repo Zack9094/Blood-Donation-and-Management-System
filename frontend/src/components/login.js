@@ -1,97 +1,139 @@
-import react, { useEffect, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./SignUp.css";
 
-import './SignUp.css'
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // const [data,setData]=useState([]);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const navigate = useNavigate();
-
-  useEffect(() => {
-
-  }, [navigate]);
 
   const collectData = async (e) => {
     e.preventDefault();
 
-    const res = await fetch(`http://localhost:50333/login`, {
-      method: 'post',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password })
-    });
+    if (!email || !password) {
+      alert("Please enter email and password");
+      return;
+    }
 
-    const result = await res.json();
-   console.warn(result);
-    if (res.status === 200) {
+    try {
+      setLoading(true);
+
+      const res = await fetch("http://localhost:50334/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.result || "Login failed");
+      }
+
+      // Save JWT Token
       localStorage.setItem("token", result.auth);
-      console.warn(result.auth)
-    
-      console.warn()
-      if (result.auth!=undefined) {
-         navigate('/user');
-      }else {
-      alert(result.result);
-    }
-    
-    } else {
-      alert(result.result);
-    }
 
-  }
+      alert("Login Successful");
+        
+ navigate("/user");
+        
+     
+
+    } catch (error) {
+      console.error("Login Error:", error);
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div>
       <center>
-        <div class="wrapper" >
+        <div className="wrapper">
 
-          <div class="login">
-            <h1><span>Login</span></h1>
+          <div className="login">
+            <h1>
+              <span>Login</span>
+            </h1>
           </div>
-          <div class="input-box">
 
-            <label for="user_id" >Email</label>
-            <input type="email" id="user_id" class="input_field" required placeholder="Enter your email" value={email}
-              onChange={(e) => setEmail(e.target.value)} />
+          <form onSubmit={collectData}>
 
-          </div>
-          <div class="input-box">
-            <label for="user_password">Password</label>
-            <input type="password" id="user_password" class="input_field" required placeholder="Enter your password" value={password}
-              onChange={(e) => setPassword(e.target.value)} />
-          </div>
-          <label><input type="checkbox" />Remember me</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-          <a class="a1" href="" >  forgot password?</a><br></br>
+            <div className="input-box">
+              <label htmlFor="user_id">Email</label>
 
-          <button class="btn" type="submit" onClick={collectData}>login</button>
+              <input
+                type="email"
+                id="user_id"
+                className="input_field"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
 
+            </div>
+
+
+            <div className="input-box">
+              <label htmlFor="user_password">
+                Password
+              </label>
+
+              <input
+                type="password"
+                id="user_password"
+                className="input_field"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
+                required
+              />
+
+            </div>
+
+
+            <div className="options">
+
+              <label>
+                <input type="checkbox" />
+                Remember me
+              </label>
+
+              <button
+                type="button"
+                className="a1"
+              >
+                Forgot Password?
+              </button>
+
+            </div>
+
+
+            <button
+              className="btn"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? "Logging in..." : "Login"}
+            </button>
+
+          </form>
 
         </div>
       </center>
     </div>
-  )
+  );
+};
 
-}
 export default Login;
-
-
-{/*
-  
-  "name": "Sakshi",
-  "email": "sakshi@gmail.com",
-  "password": "hashedpassword",
-  "bloodGrp": "O+",
-  "phone": "9876543210",
-  
-  "healthStatus": {
-    "nonSmoker": true,
-    "noRecentIllness": true,
-   "noInfectiousDisease": true,
-    "hemoglobin": 13.5,
-    "weight": 55
-  },
-  "lastDonationDate":"24 jan 2020"
-*/}

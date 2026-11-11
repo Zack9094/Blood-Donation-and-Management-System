@@ -1,121 +1,127 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './DR.css';
+import React, { useEffect, useState } from "react";
+import "./DR.css";
 
 const StokeBloodList = () => {
- 
-  const [bloodCount, setBloodCount] = useState({
-    "A+": 0, "A-": 0,
-    "B+": 0, "B-": 0,
-    "O+": 0, "O-": 0,
-    "AB+": 0, "AB-": 0
-  });
-  
- 
-  const navigate = useNavigate();
+
+  const initialStock = {
+    "A+": 0,
+    "A-": 0,
+    "B+": 0,
+    "B-": 0,
+    "O+": 0,
+    "O-": 0,
+    "AB+": 0,
+    "AB-": 0,
+  };
+
+  const [bloodCount, setBloodCount] = useState(initialStock);
 
   useEffect(() => {
-    getCand();
+    getBloodStock();
   }, []);
-const cancelData = () => {
-  setBloodCount({
-    "A+": 0, "A-": 0,
-    "B+": 0, "B-": 0,
-    "O+": 0, "O-": 0,
-    "AB+": 0, "AB-": 0
-  });
-}
 
-
-
-  const getCand = async () => {
+  const getBloodStock = async () => {
     try {
-      const res = await fetch("http://localhost:50333/bloodRecord", {
-        headers: {
-          authorization: JSON.parse(localStorage.getItem('token'))
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        "http://localhost:50333/bloodRecord",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Unable to fetch blood records");
+      }
+
+      const records = await response.json();
+
+      const count = { ...initialStock };
+
+      records.forEach((item) => {
+        const qty = Number(item.Qty) || 0;
+
+        if (item.inventoryType === "in") {
+          count[item.bloodGrp] += qty;
+        } 
+        else if (item.inventoryType === "out") {
+          count[item.bloodGrp] -= qty;
         }
       });
 
-    
-
-      if (!res.ok) {
-        throw new Error("Server error");
-      }
-
-      const result = await res.json();
-
-      const count = { ...bloodCount };
-
-       let c=0
-      result.forEach((item) => {
-        if (count[item.bloodGrp] !== undefined) {
-          const qty = Number(item.Qty) || 0;
-
-          if (item.inventoryType === "in") {
-            count[item.bloodGrp] += qty;
-            c=+qty
-          } else if (item.inventoryType === "out") {
-            count[item.bloodGrp] -= qty;
-            c=-qty
-          }
+      // Prevent negative stock
+      Object.keys(count).forEach((group) => {
+        if (count[group] < 0) {
+          count[group] = 0;
         }
       });
 
       setBloodCount(count);
-      console.warn(count['A+'])
-     
-  const response = await fetch("http://localhost:50333/bloodstock", {
-      method: "post",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    body: JSON.stringify({
-  "A+": count["A+"],
-  "A-": count["A-"],
-  "B+": count["B+"],
-  "B-": count["B-"],
-  "O+": count["O+"],
-  "O-": count["O-"],
-  "AB+": count["AB+"],
-  "AB-": count["AB-"]
-}),
 
-    });
+      // Optional: Save current stock in database
+      await updateBloodStock(count);
 
-
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Error:", error);
     }
   };
 
+
+  const updateBloodStock = async (stock) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        "http://localhost:50334/bloodstock",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(stock),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update blood stock");
+      }
+
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
+  const getStatus = (qty) => {
+    if (qty > 15) return "In Stock";
+    if (qty >= 5) return "Low Stock";
+    return "Very Low";
+  };
+
+
   return (
     <div>
-      <table className='tbl2'>
+      <table className="tbl2">
         <thead>
           <tr>
-            <th className='t2'>Blood Grp</th>
-            <th className='t2'>Qty</th>
-            <th className='t2'>Expiry</th>
-            <th className='t2'>Status</th>
+            <th className="t2">Blood Group</th>
+            <th className="t2">Available Units</th>
+            <th className="t2">Status</th>
           </tr>
         </thead>
 
         <tbody>
-          {Object.entries(bloodCount).map(([group, qty]) => {
-            const status =
-              qty > 15 ? "InStock"
-              : qty >= 5 ? "LowStock"
-              : "VeryLow";
-
-            return (
-              <tr key={group} className={status}>
-                <td className='t2'>{group}</td>
-                <td className='t2'>{qty}</td>
-                <td className='t2'>20 Feb 2026</td>
-                <td className='t3'>{status}</td>
-              </tr>
-            );
-          })}
+          {Object.entries(bloodCount).map(([group, qty]) => (
+            <tr key={group}>
+              <td className="t2">{group}</td>
+              <td className="t2">{qty}</td>
+              <td className="t3">{getStatus(qty)}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

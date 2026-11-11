@@ -1,11 +1,9 @@
-
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import "./addhosp.css";
 
-import './addhosp.css'
-const AddHospita = ({ setShowForm, setShowdiv2 }) => {
+const AddHospital = ({ setShowForm, setShowdiv2 }) => {
     const [hname, setHname] = useState("");
-    const [licenceId, setLicenceId] = useState("");
+    const [licenseId, setLicenseId] = useState("");
     const [address, setAddress] = useState("");
     const [city, setCity] = useState("");
     const [totalRequests, setTotalRequests] = useState("");
@@ -15,72 +13,42 @@ const AddHospita = ({ setShowForm, setShowdiv2 }) => {
     const [phone, setPhone] = useState("");
     const [status, setStatus] = useState("");
 
-    const navigate = useNavigate();
-
-    // ---------------- CANCEL ----------------
-    const cancelData = () => {
-        setHname(""); setEmail("");
-        setAddress(""); setEmergencyContact("");
-        setCity(""); setTotalRequests("");
-        setLicenceId(""); setStatus("");
-        setAvailableUnits(""); setPhone("");
-
-
+    const clearForm = () => {
+        setHname("");
+        setLicenseId("");
+        setAddress("");
+        setCity("");
+        setTotalRequests("");
+        setAvailableUnits("");
+        setEmergencyContact("");
+        setEmail("");
+        setPhone("");
+        setStatus("");
     };
-    //-----------------CLOSE---------------------------------------------
-    const close = () => {
-        setHname(""); setEmail("");
-        setAddress(""); setEmergencyContact("");
-        setCity(""); setTotalRequests("");
-        setLicenceId(""); setStatus("");
-        setAvailableUnits(""); setPhone("");
+
+    const closeForm = () => {
+        clearForm();
         setShowForm(false);
         setShowdiv2(true);
-    }
-    // ---------------- FETCH STOCK ----------------
-    //   const stock = async () => {
-    //     try {
-    //       const res = await fetch("http://localhost:50333/bloodstock", {
-    //         method: "GET",
-    //         headers: {
-    //           authorization: JSON.parse(localStorage.getItem("token")),
-    //         },
-    //       });
+    };
 
-    //       const data = await res.json();
-    //       setItem(data);
-    //     } catch (err) {
-    //       console.error("Stock fetch error:", err);
-    //     }
-    //   };
-
-    // ---------------- CHECK INPUT ----------------
-    //   const checkInput = (value) => {
-    //     if (item.length > 0 && bloodGrp) {
-    //       const available = item[0][bloodGrp];
-
-    //       if (value > available) {
-    //         alert(`Only ${available} ml available`);
-    //         setQty("");
-    //       }
-    //     }
-    //   };
-
-    // ---------------- SUBMIT ----------------
     const collectData = async (e) => {
         e.preventDefault();
 
         try {
+            const token = JSON.parse(localStorage.getItem("token"));
+
             const response = await fetch(
-                "http://localhost:50333/addHospitals",
+                "http://localhost:50334/addhospital",
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
                     },
                     body: JSON.stringify({
                         hname,
-                        licenceId,
+                        licenseId,
                         address,
                         city,
                         totalRequests,
@@ -93,36 +61,41 @@ const AddHospita = ({ setShowForm, setShowdiv2 }) => {
                 }
             );
 
-            if (!response.ok) {
-                throw new Error("Server error");
-            }
-
             const result = await response.json();
 
-            localStorage.setItem("user", JSON.stringify(result.result));
-            localStorage.setItem("token", JSON.stringify(result.auth));
+            if (!response.ok) {
+                throw new Error(result.message || "Failed to add hospital");
+            }
 
-            cancelData();
+            alert("Hospital added successfully!");
+
+            clearForm();
+
         } catch (error) {
             console.error("Error:", error);
-            alert("Operation failed. Check backend.");
+            alert(error.message);
         }
     };
 
     return (
         <div className="form-container1">
             <div className="form-card1">
-                <div className="container2" style={{animation: "floatUpDown 2s ease-in-out infinite"}}>
+
+                <div
+                    className="container2"
+                    style={{
+                        animation: "floatUpDown 2s ease-in-out infinite"
+                    }}
+                >
+
                     <form onSubmit={collectData}>
 
-                        <div>Manage Hospital Records</div>
+                        <h2>Manage Hospital Records</h2>
 
                         <hr />
 
-                        {/* ---------------- IN FORM ---------------- */}
-
-
                         <div className="d1">
+
                             <label>Hospital Name</label>
                             <input
                                 value={hname}
@@ -131,17 +104,19 @@ const AddHospita = ({ setShowForm, setShowdiv2 }) => {
                                 }
                                 required
                             />
-                            <label>Licence ID</label>
+
+                            <label>License ID</label>
                             <input
                                 type="text"
-                                value={licenceId}
+                                value={licenseId}
                                 onChange={(e) =>
-                                    setLicenceId(e.target.value)
+                                    setLicenseId(e.target.value)
                                 }
                                 required
                             />
 
                             <div className="d4">
+
                                 <label>Address</label>
                                 <input
                                     type="text"
@@ -164,7 +139,9 @@ const AddHospita = ({ setShowForm, setShowdiv2 }) => {
 
                             </div>
 
+
                             <div className="d2">
+
                                 <label>Email</label>
                                 <input
                                     type="email"
@@ -174,7 +151,8 @@ const AddHospita = ({ setShowForm, setShowdiv2 }) => {
                                     }
                                     required
                                 />
-                                <label>phone</label>
+
+                                <label>Phone</label>
                                 <input
                                     type="number"
                                     value={phone}
@@ -186,8 +164,20 @@ const AddHospita = ({ setShowForm, setShowdiv2 }) => {
 
                             </div>
 
+
                             <div className="d3">
-                                //  <label>Available Units</label>
+
+                                <label>Total Requests</label>
+                                <input
+                                    type="number"
+                                    value={totalRequests}
+                                    onChange={(e) =>
+                                        setTotalRequests(e.target.value)
+                                    }
+                                    required
+                                />
+
+                                <label>Available Units</label>
                                 <input
                                     type="number"
                                     value={availableUnits}
@@ -197,17 +187,33 @@ const AddHospita = ({ setShowForm, setShowdiv2 }) => {
                                     required
                                 />
 
-
-                                <select className='select' value={status} onChange={(e) => setStatus(e.target.value)} required>
-                                    <option value="">Status</option>
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
+                                <label>Status</label>
+                                <select
+                                    className="select"
+                                    value={status}
+                                    onChange={(e) =>
+                                        setStatus(e.target.value)
+                                    }
+                                    required
+                                >
+                                    <option value="">
+                                        Select Status
+                                    </option>
+                                    <option value="Active">
+                                        Active
+                                    </option>
+                                    <option value="Inactive">
+                                        Inactive
+                                    </option>
                                 </select>
 
-
                             </div>
+
+
                             <div className="d5">
+
                                 <label>Emergency Contact</label>
+
                                 <input
                                     type="number"
                                     value={emergencyContact}
@@ -216,30 +222,44 @@ const AddHospita = ({ setShowForm, setShowdiv2 }) => {
                                     }
                                     required
                                 />
-                                {/*---------------------------------------buttons-------------- */}
 
                                 <div className="btns">
 
                                     <button
                                         type="button"
-                                        onClick={cancelData}
+                                        onClick={clearForm}
                                     >
                                         Cancel
                                     </button>
 
-                                    <button type="submit">
+
+                                    <button
+                                        type="submit"
+                                    >
                                         Submit
                                     </button>
+
+
+                                    <button
+                                        type="button"
+                                        onClick={closeForm}
+                                    >
+                                        Close
+                                    </button>
+
                                 </div>
+
                             </div>
+
                         </div>
 
-
                     </form>
+
                 </div>
+
             </div>
         </div>
     );
 };
 
-export default AddHospita;
+export default AddHospital;

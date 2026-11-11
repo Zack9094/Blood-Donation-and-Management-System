@@ -1,61 +1,101 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './DR.css'
-const DonorList = () => {
+import React, { useEffect, useState } from "react";
+import "./DR.css";
 
-  const [cand, setCand] = useState([]);
-  const navigate = useNavigate();
+const DonorList = () => {
+  const [donors, setDonors] = useState([]);
+  const [search, setSearch] = useState("");
+  const [filteredDonors, setFilteredDonors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    getCand();
+    getDonors();
   }, []);
 
-  const getCand = async () => {
-    try {
-      const token=localStorage.getItem("token");
-      const res = await fetch("http://localhost:50333/donorlist", {
+  useEffect(() => {
+    const filtered = donors.filter((item) =>
+      item.name.toLowerCase().includes(search.toLowerCase())
+    );
 
+    setFilteredDonors(filtered);
+  }, [search, donors]);
+
+  const getDonors = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("Please login first");
+        return;
+      }
+
+      const res = await fetch("http://localhost:50334/donorlist", {
+        method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!res.ok) {
-        throw new Error("Server Error");
+        throw new Error("Unable to fetch donor records");
       }
 
       const result = await res.json();
-      setCand(result);
 
+      setDonors(result);
+      setFilteredDonors(result);
     } catch (err) {
       console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (loading) {
+    return <h3 style={{ textAlign: "center" }}>Loading donors...</h3>;
+  }
+
+  if (error) {
+    return (
+      <h3 style={{ textAlign: "center", color: "red" }}>
+        {error}
+      </h3>
+    );
+  }
+
   return (
-    <div className='list'>
-      
-      <table className='t1'>
+    <div className="list">
+      <table className="t1">
         <thead>
-          <tr><td colSpan={6}>
-          <div className='srch'>
-          <input 
-            className='search'
-             type="text"
-             placeholder='Search by name'
-             /><button className='searchbtn'>OK</button>
-          </div>
-          </td>
-
-          <td colSpan={4}>
-          <div className='srch2'>
-          <button className='fltr'> + Add Filter </button>
-          </div>
-          </td>
-
-          </tr>
           <tr>
-            <th>Donor's Name</th>
+            <td colSpan="6">
+              <div className="srch">
+                <input
+                  className="search"
+                  type="text"
+                  placeholder="Search by name"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <button className="searchbtn">
+                  Search
+                </button>
+              </div>
+            </td>
+
+            <td colSpan="4">
+              <div className="srch2">
+                <button className="fltr">
+                  + Add Filter
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <th>Donor Name</th>
             <th>Address</th>
             <th>Age</th>
             <th>Gender</th>
@@ -69,9 +109,9 @@ const DonorList = () => {
         </thead>
 
         <tbody>
-          {cand.length > 0 ? (
-            cand.map((item, idx) => (
-              <tr key={item._id || idx}>
+          {filteredDonors.length > 0 ? (
+            filteredDonors.map((item, index) => (
+              <tr key={item._id || index}>
                 <td>{item.name}</td>
                 <td>{item.addrs}</td>
                 <td>{item.age}</td>
@@ -87,7 +127,7 @@ const DonorList = () => {
           ) : (
             <tr>
               <td colSpan="10" style={{ textAlign: "center" }}>
-                No Result Found
+                No Donors Found
               </td>
             </tr>
           )}
@@ -98,80 +138,3 @@ const DonorList = () => {
 };
 
 export default DonorList;
-
-// import React, {useState, useEffect} from 'react';
-// import { Link } from 'react-router-dom';
-
-// const ProductList =()=>{
-//     const [products, setProducts] = useState([])
-   
-//     useEffect(()=>{
-//         getProducts();
-//     }, []);
-
-//     const getProducts = async ()=>{
-//         let result = await fetch('http://localhost:3050/products',{
-//             headers:{
-//                 authorization: JSON.parse(localStorage.getItem('token'))
-//             }
-//         });
-//         result = await result.json();
-//         setProducts(result);
-//     }
-//    // console.warn("products",products);
-// const deleteProduct = async (id)=>{
-//     let result = await fetch(`http://localhost:3050/product/${id}`,{
-//         method:"Delete"
-//     });
-//     result = await result.json()
-//     if(result)
-//     {
-//         alert("record is deleted")
-//         getProducts();
-//     }
-// }
-// const searchHandle = async (event) =>{
-//     let key = event.target.value;
-//     if(key){
-//         let result = await fetch(`http://localhost:3050/product/${key}`);
-//         result =await result.json();
-//         if(result){
-//             setProducts(result)
-//         }
-//     }else{getProducts()
-        
-//     }
-// }
-   
-//     return(
-//         <div className='ProductList'>
-//             <h3>Product List</h3>
-//             <input className='search-product-box' type="text" placeholder='Search Product'
-//             onChange={searchHandle}/>
-//             <ul>
-//                 <li>S. No</li>
-//                 <li>Name</li>
-//                 <li>Price</li>
-//                 <li>Category</li>
-//                 <li>Company</li>
-//                 <li>Operation</li>
-//             </ul>
-//             {
-//                products.length>0 ? products.map((item,index)=>
-//                  <ul key={item._id}>
-//                 <li>{index+1}</li>
-//                 <li>{item.name}</li>
-//                 <li>$ {item.price}</li>
-//                 <li>{item.category}</li>
-//                 <li>{item.company}</li>
-//                 <li><button onClick={()=>deleteProduct(item._id)}>Delete</button>
-//                 <Link to={"/update/"+item._id}>Update</Link>
-//                 </li> 
-//             </ul>
-//                 )
-//                 :<h1>No Result found</h1>
-//             }
-          
-//         </div>
-//     )
-// }

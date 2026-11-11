@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const jwtkey = "mysecretkey"; // use your actual key
+const jwtkey = process.env.JWT_SECRET;
 
 module.exports = function (req, res, next) {
 
@@ -9,10 +9,7 @@ module.exports = function (req, res, next) {
     return res.status(401).send("No token provided");
   }
 
-  // Remove "Bearer "
-  console.log(header);
   const token = header.split(" ")[1];
-  console.log(token);
 
   if (!token) {
     return res.status(400).send("Invalid token format");
@@ -20,11 +17,11 @@ module.exports = function (req, res, next) {
 
   try {
     const decoded = jwt.verify(token, jwtkey);
-    console.log(decoded)
-    req.user = decoded;   // 👈 VERY IMPORTANT
-     
+
+    req.user = decoded;
+
     next();
   } catch (err) {
-    return res.status(400).send("Invalid token");
+    return res.status(401).send("Invalid or expired token");
   }
 };

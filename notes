@@ -1,0 +1,4379 @@
+block storage ,object storage
+S3 service global service but data stored at reginal level
+stures about 500 tb 
+
+app.get("/profile", async (req, resp) => {
+
+   const authHeader = req.headers.authorization;
+   if (!authHeader) {
+      return resp.status(401).json({ message: "No token" });
+   }
+   if (!authHeader.startsWith("Bearer ")) {
+      return resp.status(401).json({ message: "Invalid token format" });
+   }
+   const token = authHeader.split(" ")[1];
+
+   try {
+      const decoded = jwt.verify(token, jwtkey);
+
+
+      const userData = await users1.findById(decoded.id).select("-password");
+
+      if (!userData) {
+         return resp.status(404).json({ message: "User not found" });
+      }
+
+
+      resp.status(200).json(userData);
+
+   } catch (err) {
+      resp.status(401).json({ message: err.message });
+   }
+
+});
+
+      const allowedUpdates = {
+  name: req.body.name,
+  phone: req.body.phone,
+  address: req.body.address
+};
+
+
+
+
+//          ----------------------index.js-------------------
+
+
+const express = require('express');
+const mongoose = require("mongoose");
+require("dotenv").config();
+const bcrypt = require("bcryptjs");
+mongoose.connect(process.env.MONGO_URI, {
+
+   //useNewUrlParser: true,
+   //  useUnifiedTopology: true,
+
+})
+   .then(() => {
+      console.log("Database connected successfully");
+   })
+   .catch((err) => {
+      console.error("Database connection failed");
+   });
+
+const User = require("./db/users");
+const app = express();
+app.use(express.json());
+const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const jwtkey = process.env.JWT_SECRET; // use env variable later
+
+//app.use(cors());
+app.use(cors({
+   origin: [process.env.FRONTEND_URL]
+}));
+
+app.get("/", (req, res) => {
+   res.send("app is working")
+});
+
+app.post("/register", async (req, resp) => { // async function cause it returns promise
+
+
+   const hashedPassword = await bcrypt.hash(req.body.password, 10);
+   const existingUser = await User.findOne({
+      email: req.body.email
+   });
+
+   if (existingUser) {
+      return resp.status(409).json({
+         message: "Email already exists"
+      });
+   }
+   let user = new User({
+      ...req.body,
+      password: hashedPassword
+   });
+   let result = await user.save();
+   result = result.toObject();
+   delete result.password                           //  nhi use kar sakte password hide karne k liye
+
+   const token = jwt.sign(
+      {
+         id: result._id,
+         role: "user"
+      },
+      jwtkey,
+      { expiresIn: "2h" }
+   );
+
+   resp.send({
+      result,
+      auth: token
+   });
+
+});
+
+
+
+//---------------------------------------------------
+const verifyToken = require("./middleware/verifyToken");
+const authorizeRole = require("./middleware/authorizeRole");
+const admin = require('./db/admin')
+const Donor = require("./db/donor");
+app.post("/donorRegister", async (req, resp) => {
+   const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
+   const existingDonor = await Donor.findOne({
+      email: req.body.email
+   });
+
+   if (existingDonor) {
+      return resp.status(409).json({
+         message: "Email already exists"
+      });
+   }
+   let donor = new Donor({
+      ...req.body,
+      password: hashedPassword
+   });
+   let result = await donor.save();
+   result = result.toObject();
+   delete result.password
+   const token = jwt.sign(
+      {
+         id: result._id,
+         role: "donor"
+      },
+      jwtkey,
+      {
+         expiresIn: "2h"
+      }
+   );
+
+   resp.json({
+      result,
+      auth: token
+   });
+});
+
+app.get("/donorlist",
+   verifyToken,
+   authorizeRole("admin"),
+   async (req, resp) => { // async function cause it returns promise
+
+      let result = await Donor.find()
+         .select("-password");
+      if (result.length > 0) {
+         resp.send(result)
+      } else {
+         resp.status(404).json({
+            message: "No result found"
+         });
+      }
+   })
+
+
+app.post("/login", async (req, resp) => {
+   if (!req.body) {
+      return resp.status(400).json({
+         message: "No data received"
+      });
+   }
+   const { email, password } = req.body;
+   if (!email || !password) {
+      return resp.status(400).json({
+         message: "Email and password required"
+      });
+   }
+   try {
+      const user = await User.findOne({ email });
+      if (!user) {
+         return resp.status(404).json({
+            message: "User not found"
+         });
+      }
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      if (!isMatch) {
+         return resp.status(401).json({
+            result: "Wrong Password"
+         });
+      }
+      const token = jwt.sign(
+         {
+            id: user._id,
+            role: "user"
+         },
+         jwtkey,
+         {
+            expiresIn: "2h"
+         }
+      );
+      resp.send({ auth: token });
+   }
+   catch (error) {
+      console.error(error);
+      resp.status(500).json({
+         message: "Something went wrong"
+      });
+   }
+})
+
+app.get("/profile", async (req, resp) => {
+
+   const authHeader = req.headers.authorization;
+   if (!authHeader) {
+      return resp.status(401).json({ message: "No token" });
+   }
+   if (!authHeader.startsWith("Bearer ")) {
+      return resp.status(401).json({ message: "Invalid token format" });
+   }
+   const token = authHeader.split(" ")[1];
+
+   try {
+      const decoded = jwt.verify(token, jwtkey);
+
+
+      const userData = await User.findById(decoded.id).select("-password");
+
+      if (!userData) {
+         return resp.status(404).json({ message: "User not found" });
+      }
+
+
+      resp.status(200).json(userData);
+
+   } catch (err) {
+      resp.status(401).json({ message: err.message });
+   }
+
+});
+
+
+app.post(
+   "/updateProfile",
+   verifyToken,
+   async (req, resp) => {
+
+      const allowedUpdates = {
+         name: req.body.name,
+         phone: req.body.phone,
+         address: req.body.address,
+         password: req.body.password
+      };
+
+      const updatedData = await User.findByIdAndUpdate(
+         req.user.id,
+         allowedUpdates,
+         { new: true }
+      ).select("-password");
+
+      if (updatedData) {
+         resp.send(updatedData);
+      } else {
+         return resp.status(404).json({
+            message: "User not found"
+         });
+      }
+   })
+
+//-------------------------------------admin----------------------------
+
+
+app.post("/adminlogin", async (req, resp) => {
+   if (!req.body) {
+      return resp.status(400).json({
+         result: "Login credentials required!"
+      });
+   }
+
+   const { email, password } = req.body;
+
+   if (!email || !password) {
+      return resp.status(400).json({
+         result: "Email and password are required!"
+      });
+   }
+
+   try {
+      const user = await admin.findOne({ email });
+
+      if (!user) {
+         return resp.status(404).json({
+            result: "User not found"
+         });
+      }
+
+      const isMatch = await bcrypt.compare(
+         password,
+         user.password
+      );
+
+      if (!isMatch) {
+         return resp.status(401).json({
+            result: "Wrong Password"
+         });
+      }
+
+      const token = jwt.sign(
+         {
+            id: user._id,
+            role: user.role
+         },
+         jwtkey,
+         {
+            expiresIn: "2h"
+         }
+      );
+
+      return resp.status(200).json({
+         auth: token
+      });
+
+   } catch (error) {
+      return resp.status(500).json({
+         result: "Something went wrong!"
+      });
+   }
+});
+//---------------------------------------------------------------------------------
+
+const Inven = require('./db/Invent')
+app.post(
+   "/addInventory",
+   verifyToken,
+   authorizeRole("admin"),
+   async (req, resp) => {
+      let inven = new Inven(req.body);
+      let result = await inven.save();
+      result = result.toObject();
+      resp.send(result);
+   });
+
+
+app.get("/bloodRecord",
+   verifyToken,
+   authorizeRole("admin"),
+   async (req, resp) => {
+
+      let result = await Inven.find();
+      if (result.length > 0) {
+         resp.send(result)
+      } else {
+         resp.status(404).json({
+            message: "No result found"
+         });
+      }
+   })
+
+const bs = require('./db/BloodStoke')
+
+app.post("/bloodstock",
+   verifyToken,
+   authorizeRole("admin"),
+   async (req, resp) => {
+      let result = await bs.updateOne(
+         {},
+         req.body
+      )
+      resp.send(result)
+   });
+
+app.get("/bloodstock",
+   verifyToken,
+   authorizeRole("admin"),
+   async (req, resp) => {
+      let result = await bs.find();
+      if (result.length > 0) {
+         resp.send(result);
+      } else {
+         resp.status(404).json({
+            message: "No result found"
+         });
+      }
+   })
+
+app.get("/donorlist/:id",
+   verifyToken,
+   authorizeRole("admin"),
+   async (req, resp) => {
+      const don = await Donor.findOne({
+         _id: req.params.id
+      }).select("-password");
+
+      if (don) {
+         resp.send(don);
+      } else {
+         resp.status(404).json({
+            message: "No result found"
+         });
+      }
+   })
+
+const Reqs = require('./db/request')
+app.post("/request",
+   verifyToken,
+   authorizeRole("user"),
+   async (req, resp) => {
+      let reqs = new Reqs(req.body);
+      let reqst = await reqs.save();
+      reqst = reqst.toObject();
+      if (reqst.length > 0) {
+         return resp.send(reqst);
+      }
+
+      return resp.status(404).json({
+         message: "No requests found"
+      });
+   })
+app.get("/request/:id",
+   verifyToken,
+   authorizeRole("admin"),
+   async (req, resp) => {
+
+      let reqst = await Reqs.findOne({ _id: req.params.id });
+
+      if (reqst) {
+         resp.send(reqst);
+      } else {
+         resp.status(404).json({
+            message: "No result found"
+         });
+      }
+   })
+
+
+app.get("/request",
+   verifyToken,
+   authorizeRole("admin"),
+   async (req, resp) => {
+      let reqst = await Reqs.find();
+      if (reqst) {
+         resp.send(reqst);
+      }
+      else {
+         resp.status(404).json({
+            message: "No result found"
+         });
+      }
+   })
+
+const hosp = require("./db/hospitals")
+
+app.post("/addhospital",
+   verifyToken,
+   authorizeRole("admin"),
+   async (req, resp) => {
+      let hospt = new hosp(req.body);
+      let newhospt = await hospt.save();
+      newhospt = newhospt.toObject();
+      if (newhospt) {
+         resp.send(newhospt);
+      } else {
+         resp.status(404).json({
+            message: "No result found"
+         });
+      }
+   })
+
+app.get("/hospitals",
+   verifyToken,
+   authorizeRole("admin"), async (req, resp) => {
+      let gethosp = await hosp.find();
+      if (gethosp.length > 0) {
+         resp.send(gethosp);
+      } else {
+         resp.status(404).json({
+            message: "No result found"
+         });
+      }
+   })
+
+app.use((err, req, res, next) => {
+   console.error(err);
+   res.status(500).json({
+      message: "Internal server error"
+   });
+});
+
+const PORT = process.env.PORT || 50333;
+
+app.listen(PORT, () => {
+   console.log(`Server running on ${PORT}`);
+});
+
+
+
+//-----------------------------------------------------------------------------------
+//add hospital
+
+
+import React, { useState } from "react";
+
+import './addhosp.css'
+const AddHospita = ({ setShowForm, setShowdiv2 }) => {
+    const [hname, setHname] = useState("");
+    const [licenceId, setLicenceId] = useState("");
+    const [address, setAddress] = useState("");
+    const [city, setCity] = useState("");
+    const [totalRequests, setTotalRequests] = useState("");
+    const [availableUnits, setAvailableUnits] = useState("");
+    const [emergencyContact, setEmergencyContact] = useState("");
+    const [email, setEmail] = useState("");
+    const [phone, setPhone] = useState("");
+    const [status, setStatus] = useState("");
+
+    const navigate = useNavigate();
+
+    // ---------------- CANCEL ----------------
+    const cancelData = () => {
+        setHname(""); setEmail("");
+        setAddress(""); setEmergencyContact("");
+        setCity(""); setTotalRequests("");
+        setLicenceId(""); setStatus("");
+        setAvailableUnits(""); setPhone("");
+
+
+    };
+    //-----------------CLOSE---------------------------------------------
+    const close = () => {
+        setHname(""); setEmail("");
+        setAddress(""); setEmergencyContact("");
+        setCity(""); setTotalRequests("");
+        setLicenceId(""); setStatus("");
+        setAvailableUnits(""); setPhone("");
+        setShowForm(false);
+        setShowdiv2(true);
+    }
+   
+    const collectData = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await fetch(
+                "http://localhost:50334/addhospital",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${localStorage.getItem("token")}`
+                    },
+                    body: JSON.stringify({
+                        hname,
+                        licenceId,
+                        address,
+                        city,
+                        totalRequests,
+                        availableUnits,
+                        emergencyContact,
+                        email,
+                        phone,
+                        status,
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Server error");
+            }
+
+            const result = await response.json();
+
+            console.log(result);
+alert("Hospital added successfully");
+cancelData();
+            cancelData();
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Operation failed. Check backend.");
+        }
+    };
+
+    return (
+        <div className="form-container1">
+            <div className="form-card1">
+                <div className="container2" style={{animation: "floatUpDown 2s ease-in-out infinite"}}>
+                    <form onSubmit={collectData}>
+
+                        <div>Manage Hospital Records</div>
+
+                        <hr />
+
+                        {/* ---------------- IN FORM ---------------- */}
+
+
+                        <div className="d1">
+                            <label>Hospital Name</label>
+                            <input
+                                value={hname}
+                                onChange={(e) =>
+                                    setHname(e.target.value)
+                                }
+                                required
+                            />
+                            <label>Licence ID</label>
+                            <input
+                                type="text"
+                                value={licenceId}
+                                onChange={(e) =>
+                                    setLicenceId(e.target.value)
+                                }
+                                required
+                            />
+
+                            <div className="d4">
+                                <label>Address</label>
+                                <input
+                                    type="text"
+                                    value={address}
+                                    onChange={(e) =>
+                                        setAddress(e.target.value)
+                                    }
+                                    required
+                                />
+
+                                <label>City</label>
+                                <input
+                                    type="text"
+                                    value={city}
+                                    onChange={(e) =>
+                                        setCity(e.target.value)
+                                    }
+                                    required
+                                />
+
+                            </div>
+
+                            <div className="d2">
+                                <label>Email</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) =>
+                                        setEmail(e.target.value)
+                                    }
+                                    required
+                                />
+                                <label>phone</label>
+                                <input
+                                    type="number"
+                                    value={phone}
+                                    onChange={(e) =>
+                                        setPhone(e.target.value)
+                                    }
+                                    required
+                                />
+
+                            </div>
+
+                            <div className="d3">
+                               {/* Available Units */}
+<label>Available Units</label>
+                                <input
+                                    type="number"
+                                    value={availableUnits}
+                                    onChange={(e) =>
+                                        setAvailableUnits(e.target.value)
+                                    }
+                                    required
+                                />
+
+
+                                <select className='select' value={status} onChange={(e) => setStatus(e.target.value)} required>
+                                    <option value="">Status</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+
+
+                            </div>
+                            <div className="d5">
+                                <label>Emergency Contact</label>
+                                <input
+                                    type="number"
+                                    value={emergencyContact}
+                                    onChange={(e) =>
+                                        setEmergencyContact(e.target.value)
+                                    }
+                                    required
+                                />
+                                {/*---------------------------------------buttons-------------- */}
+
+                                <div className="btns">
+
+                                    <button
+                                        type="button"
+                                        onClick={cancelData}
+                                    >
+                                        Cancel
+                                    </button>
+
+                                    <button type="submit">
+                                        Submit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default AddHospita;
+
+
+//----------------------------------------------------------------------------
+import React, { useState,useEffect } from "react";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faLocationCrosshairs } from '@fortawesome/free-solid-svg-icons';
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import { useNavigate } from "react-router-dom";
+
+function AddNgo(){
+
+ const [position,setPosition] = useState([20,85]);
+ const navigate=useNavigate();
+  useEffect(() => {
+
+  }, [navigate]);
+ return(
+  <div>
+
+   <div>
+    <FontAwesomeIcon icon={faLocationCrosshairs} />
+   </div>
+
+   <input type="search" placeholder="Search donors"/>
+
+   <MapContainer center={position} zoom={13} style={{height:"400px"}}>
+
+    <TileLayer
+     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    />
+
+    <Marker position={position}>
+     <Popup>
+      Rahul – A+ donor
+     </Popup>
+    </Marker>
+
+   </MapContainer>
+
+  </div>
+ )
+}
+
+export default AddNgo;
+//------------------------------------------------------------------------------------------------
+
+import react, { useEffect, useState } from 'react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+
+import './SignUp.css'
+const AdminLogin = () => {
+
+  // const [data,setData]=useState([]);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+
+  }, [navigate]);
+
+  const collectData = async (e) => {
+    e.preventDefault();
+
+    const res = await fetch(`http://localhost:50333/adminlogin`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    const result = await res.json();
+   console.warn(result);
+    if (res.status === 200) {
+      localStorage.setItem("token", result.auth);
+      console.warn(result.auth)
+    
+      console.warn()
+      if (result.auth!=undefined) {
+         navigate('/home');
+      }else {
+      alert(result.result);
+    }
+    
+    } else {
+      alert(result.result);
+    }
+
+  }
+
+  return (
+    <div>
+      <center>
+        <div class="wrapper" >
+
+          <div class="login">
+            <h1><span>Admin Login</span></h1>
+          </div>
+          <div class="input-box">
+
+            <label for="user_id" >Email</label>
+            <input type="email" id="user_id" class="input_field" required placeholder="Enter your email" value={email}
+              onChange={(e) => setEmail(e.target.value)} />
+
+          </div>
+          <div class="input-box">
+            <label for="user_password">Password</label>
+            <input type="password" id="user_password" class="input_field" required placeholder="Enter your password" value={password}
+              onChange={(e) => setPassword(e.target.value)} />
+          </div>
+          <label><input type="checkbox" />Remember me</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <a class="a1" href="" >  forgot password?</a><br></br>
+
+          <button class="btn" type="submit" onClick={collectData}>login</button>
+
+
+        </div>
+      </center>
+    </div>
+  )
+
+}
+export default AdminLogin;
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+import react, { useEffect, useState } from 'react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+
+import './SignUp.css'
+const AdminLogin = () => {
+
+  // const [data,setData]=useState([]);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+
+  }, [navigate]);
+
+  const collectData = async (e) => {
+    e.preventDefault();
+
+    const res = await fetch(`http://localhost:50333/adminlogin`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    const result = await res.json();
+   console.warn(result);
+    if (res.status === 200) {
+      localStorage.setItem("token", result.auth);
+      console.warn(result.auth)
+    
+      console.warn()
+      if (result.auth!=undefined) {
+         navigate('/home');
+      }else {
+      alert(result.result);
+    }
+    
+    } else {
+      alert(result.result);
+    }
+
+  }
+
+  return (
+    <div>
+      <center>
+        <div class="wrapper" >
+
+          <div class="login">
+            <h1><span>Admin Login</span></h1>
+          </div>
+          <div class="input-box">
+
+            <label for="user_id" >Email</label>
+            <input type="email" id="user_id" class="input_field" required placeholder="Enter your email" value={email}
+              onChange={(e) => setEmail(e.target.value)} />
+
+          </div>
+          <div class="input-box">
+            <label for="user_password">Password</label>
+            <input type="password" id="user_password" class="input_field" required placeholder="Enter your password" value={password}
+              onChange={(e) => setPassword(e.target.value)} />
+          </div>
+          <label><input type="checkbox" />Remember me</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <a class="a1" href="" >  forgot password?</a><br></br>
+
+          <button class="btn" type="submit" onClick={collectData}>login</button>
+
+
+        </div>
+      </center>
+    </div>
+  )
+
+}
+export default AdminLogin;
+//------------------------------------------------------------------------------------
+
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './DR.css'
+const BloodRecord = () => {
+
+    const [bloodRecord, setBloodRecord] = useState([]);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        getBloodRecord();
+    }, []);
+
+    const getBloodRecord = async () => {
+        try {const token=localStorage.getItem("token");
+            const res = await fetch("http://localhost:50333/bloodRecord", {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (!res.ok) {
+                throw new Error("Server Error");
+            }
+
+            const result = await res.json();
+            setBloodRecord(result);
+
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    return (
+        <div className='list'>
+            <table className='tbl3'>
+                <thead>
+                    <tr>
+                        <th className='t2'>S_No</th>
+                        <th className='t2'>Blood_Type</th>
+                        <th className='t2'>Inventory</th>
+                        <th className='t2'>Qty</th>
+                        <th className='t2'>Donor's email_id</th>
+                        <th className='t2'>Date & Time</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {bloodRecord.length > 0 ? (
+                        bloodRecord.map((item, idx) => (
+                            <tr key={item._id || idx}>
+                                <td className='t2'>{idx + 1}</td>
+                                <td className='t2'>{item.bloodGrp}</td>
+                                <td className='t2'>{item.inventoryType}</td>
+                                <td className='t2'>{item.Qty}</td>
+                                <td className='t2'>{item.email}</td>
+                                <td className='t2'>
+                                    {new Date(item.donation_date).toLocaleString("en-IN", {
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: true
+                                    })}
+                                </td>
+                            </tr>
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan="10" style={{ textAlign: "center" }}>
+                                No Result Found
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
+export default BloodRecord;
+
+//------------------------------------------------------
+
+import react, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import './DR.css'
+const DonorRegister = () => {
+  const [name, setName] = useState("");
+  const [addrs, setAddress] = useState("");
+  const [age, setAge] = useState("");
+  const [gen, setGen] = useState("");
+  const [email, setEmail] = useState("");
+  const [fname, setFName] = useState("");
+  const [mname, setMName] = useState("");
+  const [bloodGrp, setBloodGrp] = useState("");
+  const [city, setCity] = useState("");
+  const [mobno, setMobNo] = useState("");
+  const [anyDisease, setAnyDisease] = useState("");
+  const [lastDonationDate, setLastDonationDate] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const auth = localStorage.getItem("user");
+    if (auth) {
+      navigate('/donorregistration');
+    }
+  }, [navigate])
+
+
+  const collectData = async () => {
+    try {
+      console.log(name, addrs, age, gen, email, fname, mname, bloodGrp, city, mobno, anyDisease, lastDonationDate);
+
+
+      const today = new Date();
+      const lastDonation = new Date(lastDonationDate);
+
+      const diffMonths = (today - lastDonation) / (1000 * 60 * 60 * 24 * 30);
+
+      if (diffMonths < 3) {
+        alert("Donor not eligible yet");
+      }
+
+
+
+
+      const response = await fetch("http://localhost:50333/donorRegister", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, addrs, age, gen, email, fname, mname, bloodGrp, city, mobno, anyDisease, lastDonationDate }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Server error");
+      }
+
+      const result = await response.json();
+      console.log(result);
+
+      localStorage.setItem("user", JSON.stringify(result.result));
+      localStorage.setItem("token", JSON.stringify(result.auth));
+
+      navigate("/");
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Registration failed. Check backend & console.");
+    }
+  };
+
+  return (
+    <div className="form-container">
+      <div className="form-card">
+        <div class="container">
+          <h2>Donor's Registration Form</h2>
+
+
+          <form action='#' method="post">
+            <div className='d1'>
+              <label>Full Name</label>
+              <input
+                type="text"
+                placeholder="Enter Full Name"
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+              <label>Enter Address</label>
+              <textarea
+                type="textarea"
+                placeholder="Enter Full Address"
+                onChange={(e) => setAddress(e.target.value)}
+              />
+              <label>Enter Age</label>
+              <input
+                type="text"
+                placeholder="Enter Age"
+                onChange={(e) => setAge(e.target.value)}
+                min={18}
+                max={65}
+                required
+              />
+              <label>Select gender</label>
+              <select name="gender" onChange={(e) => setGen(e.target.value)} required>
+                <option value="">Select</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>others</option>
+              </select>
+
+              <label>Enter City</label>
+              <input
+                type="text"
+                placeholder="Enter City"
+                onChange={(e) => setCity(e.target.value)}
+                required
+              />
+              <hr></hr><br></br>
+              <button className='smtbtn' type="submit" value="submit" onClick={collectData}
+              >Submit</button>
+            </div>
+
+
+            <div className='d2'>
+              <label>Enter Father's Name</label>
+              <input
+                type="text"
+                placeholder="Enter Father's Name"
+                onChange={(e) => setFName(e.target.value)}
+              />
+              <label>Enter Mother's Name</label>
+              <input
+                type="text"
+                placeholder="Enter Mother's Name"
+                onChange={(e) => setMName(e.target.value)}
+              />
+              <label>Select Blood Group</label>
+              <select name="blood_group" onChange={(e) => setBloodGrp(e.target.value)} required>
+                <option value=""  >Select</option>
+                <option>A+</option><option>A-</option>
+                <option>B+</option><option>B-</option>
+                <option>AB+</option><option>AB-</option>
+                <option>O+</option><option>O-</option>
+              </select>
+              <label>Enter E-Mail</label>
+              <input
+                type="email"
+                placeholder="Enter E-Mail"
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <label>Enter Mobile No</label>
+              <input
+                type="tel"
+                pattern='[0-9]{10}'
+                maxLength={10}
+                placeholder="Enter Mobile No"
+                onChange={(e) => setMobNo(e.target.value)}
+                required
+              />
+
+              <label>Disease_If_Any</label>
+              <input
+                type="text"
+                placeholder=""
+                onChange={(e) => setAnyDisease(e.target.value)}
+                required
+              />
+
+              <label>Last_Donation_Date</label>
+              <input
+                type="date"
+                placeholder=""
+                onChange={(e) => setLastDonationDate(e.target.value)}
+
+              />
+
+
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DonorRegister;
+
+
+//-------------------------------------------------
+
+import React, { useEffect, useState } from 'react';
+import './DR.css';
+import DP from './reqInfo';
+
+const DonorInfo = () => {
+
+  const [cand, setCand] = useState([]);      // Requests
+  const [cand1, setCand1] = useState([]);   // Donations
+
+  const [showRequests, setShowRequests] = useState(true);
+  const [showDonations, setShowDonations] = useState(false);
+  const [showMain, setShowMain] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+
+  useEffect(() => {
+    getRequests();
+    getDonations();
+  }, []);
+
+  // 🩸 GET REQUESTS
+  const getRequests = async () => {
+    const token=localStorage.getItem("token")
+    try {
+      const res = await fetch("http://localhost:50333/request", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const result = await res.json();
+      setCand(result);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // ❤️ GET DONATIONS
+  const getDonations = async () => {
+   
+    try {
+       const token=localStorage.getItem("token")
+      const res = await fetch("http://localhost:50333/donorlist", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const result = await res.json();
+      setCand1(result);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const showReq = () => {
+    setShowRequests(true);
+    setShowDonations(false);
+  };
+
+  const showDon = () => {
+    setShowRequests(false);
+    setShowDonations(true);
+  };
+
+  const openProfile = (id) => {
+    setSelectedId(id);
+    setShowMain(false);
+    setShowProfile(true);
+  };
+
+  const closeProfile = () => {
+    setShowProfile(false);
+    setShowMain(true);
+  };
+
+  return (
+    <>
+      {/* PROFILE SLIDE */}
+      {showProfile && (
+        <div className="overlay">
+          <div className="closeBtn" onClick={closeProfile}>✖</div>
+          <DP id={selectedId} />
+        </div>
+      )}
+
+      {showMain && (
+        <div className='mdiv'>
+
+          {/* HEADER */}
+          <div className='hed'>
+            <div id='reqdon' onClick={showReq}>
+              Requests ({cand.length})
+            </div>
+
+            <div id='reqdon' onClick={showDon}>
+              Donations ({cand1.length})
+            </div>
+          </div>
+
+          <div className='inndiv'>
+
+            {/* ================= REQUESTS ================= */}
+            {showRequests && (
+              cand.length > 0 ? (
+                cand.map((item) => (
+                  <div className='requests' key={item._id}>
+
+                    <div className='img'>
+                      <div className="blood-icon-20">
+                        <span>{item.bloodGrp}</span>
+                      </div>
+                      <p className='unit'>{item.unitReq} Units</p>
+                    </div>
+
+                    <div className='info'>
+                      <p id='h'>{item.name}</p>
+                      <p>{item.reqDate}</p>
+                      <p>📍 {item.addrs}</p>
+                    </div>
+
+                    <div className='view'>
+                      <div onClick={() => openProfile(item._id)}>
+                        View
+                      </div>
+                    </div>
+
+                  </div>
+                ))
+              ) : (
+                <div>No Requests Found</div>
+              )
+            )}
+
+            {/* ================= DONATIONS ================= */}
+            {showDonations && (
+              cand1.length > 0 ? (
+                cand1.map((item) => (
+                  <div className='requests' key={item._id}>
+
+                    <div className='img'>
+                      <div className="blood-icon-20">
+                        <span>{item.bloodGrp}</span>
+                      </div>
+                      <p className='unit'>1 unit</p>
+                    </div>
+
+                    <div className='info'>
+                      <p id='h'>{item.name}</p>
+                      <p>{new Date().toLocaleDateString()}</p>
+                      <p>📍 {item.addrs}</p>
+                      <p style={{ color: "green" }}>
+                        ✔ Successfully Donated
+                      </p>
+                    </div>
+
+                    <div className='view'>
+                      <div onClick={() => openProfile(item._id)}>
+                        View
+                      </div>
+                    </div>
+
+                  </div>
+                ))
+              ) : (
+                <div>No Donations Found</div>
+              )
+            )}
+
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default DonorInfo;
+// import React, { useEffect, useState } from 'react';
+// import {useNavigate } from 'react-router-dom'
+// import './DR.css'
+// import DP from './reqInfo'
+// const DonorInfo = () => {
+
+//   const [cand, setCand] = useState([]);
+//   const [showDiv1, setShowDiv1] = useState(true);
+//   const [showDiv2, setShowDiv2] = useState(false);
+//   const [showDiv3, setShowDiv3] = useState(false);
+//   const [showDiv, setShowDiv] = useState(true);
+//   const [selectedId, setSelectedId] = useState(null);
+//   const navigate = useNavigate();
+  
+//   useEffect((c) => {
+//     getCand();
+
+//   }, []);
+
+//   const div1 = () => {
+//     setShowDiv2(false);
+//     setShowDiv1(true);
+//   }
+  
+//   const div2 = () => {
+//     setShowDiv1(false);
+//     setShowDiv2(true);
+//   }
+//   const profile=()=>{
+//      setShowDiv(false);
+//       setShowDiv3(true);
+      
+//   }
+//   const close1=()=>{
+//     setShowDiv3(false);
+//      setShowDiv(true);
+//   }
+
+//   const getCand = async () => {
+//     try {
+//       const res = await fetch("http://localhost:50333/donorlist", {
+//         headers: {
+//           authorization: JSON.parse(localStorage.getItem('token'))
+//         }
+//       });
+
+//       if (!res.ok) {
+//         throw new Error("Server Error");
+//       }
+
+//       const result = await res.json();
+//       setCand(result);
+
+//     } catch (err) {
+//       console.error(err);
+//     }
+//   };
+
+//   return (
+// <>
+// {showDiv3 && ( 
+    
+//      <div >
+//       <div className="close" onClick={close1}>	&#10006;</div>
+//      <DP/>
+//     </div>)}
+
+//      {showDiv &&(
+
+      
+//     <div className='mdiv' >
+   
+
+      
+//       <table className='donInfo'>
+       
+//         <tr >
+//           <div className='hed'>
+//           <div id='reqdon' onClick={div1}>Requests({cand.length})</div><div id='reqdon' onClick={div2}>Donations</div>
+//           </div>
+//         </tr>
+      
+// <div className='inndiv'>
+//         <tr>
+          
+//             {cand.length > 0 ? (
+//               cand.map((item, idx) => (
+
+//                 (showDiv1  && <div className='requests'>
+//                   <div className='img'><div class="blood-icon-20"> <span>{item.bloodGrp}</span></div>
+//                     <p className='unit'>3 Unit</p>
+//                   </div>
+//                   <div className='info'>
+//                     <p id='h'>{item.name}</p>
+//                     <p>Date.now</p>
+//                     <p>📍{item.addrs}</p>
+//                   </div>
+//                  <td className='view'><div onClick={profile(item._id)} >View</div></td>
+//                 </div>)
+
+//               ))
+//             ) : (
+//               <tr>
+//                 <td colSpan="10" style={{ textAlign: "center" }}>
+//                   No Result Found
+//                 </td>
+//               </tr>
+//             )}
+//             <div>
+//             </div>
+         
+
+    
+
+
+
+//             {cand.length > 0 ? (
+//               cand.map((item, idx) => (
+
+//                 (showDiv2  && <div className='requests'>
+//                   <div className='img'><div class="blood-icon-20"> <span>{item.bloodGrp}</span></div>
+//                     <p className='unit'>3 Unit</p>
+//                   </div>
+//                   <div className='info'>
+//                     <p id='h'>{item.name}</p>
+//                     <p>Date.now</p>
+//                     <p>📍{item.addrs}</p>
+//                   </div>
+//                  <td className='view'><div onClick={profile}>View</div></td>
+//                 </div>)
+
+//               ))
+//             ) : (
+//               <tr>
+//                 <td colSpan="10" style={{ textAlign: "center" }}>
+//                   No Result Found
+//                 </td>
+//               </tr>
+//             )}
+//             <div>
+//             </div>
+         
+
+
+
+
+//         </tr>
+//         </div>
+//       </table>
+//     </div>)}
+
+//   </>
+//   );
+// };
+
+// export default DonorInfo;
+
+
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './DR.css'
+const DonorList = () => {
+
+  const [cand, setCand] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    getCand();
+  }, []);
+
+  const getCand = async () => {
+    try {
+      const token=localStorage.getItem("token");
+      const res = await fetch("http://localhost:50333/donorlist", {
+
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error("Server Error");
+      }
+
+      const result = await res.json();
+      setCand(result);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className='list'>
+      
+      <table className='t1'>
+        <thead>
+          <tr><td colSpan={6}>
+          <div className='srch'>
+          <input 
+            className='search'
+             type="text"
+             placeholder='Search by name'
+             /><button className='searchbtn'>OK</button>
+          </div>
+          </td>
+
+          <td colSpan={4}>
+          <div className='srch2'>
+          <button className='fltr'> + Add Filter </button>
+          </div>
+          </td>
+
+          </tr>
+          <tr>
+            <th>Donor's Name</th>
+            <th>Address</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>City</th>
+            <th>Father Name</th>
+            <th>Mother Name</th>
+            <th>Blood Group</th>
+            <th>Email</th>
+            <th>Mobile No</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {cand.length > 0 ? (
+            cand.map((item, idx) => (
+              <tr key={item._id || idx}>
+                <td>{item.name}</td>
+                <td>{item.addrs}</td>
+                <td>{item.age}</td>
+                <td>{item.gen}</td>
+                <td>{item.city}</td>
+                <td>{item.fname}</td>
+                <td>{item.mname}</td>
+                <td>{item.bloodGrp}</td>
+                <td>{item.email}</td>
+                <td>{item.mobno}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="10" style={{ textAlign: "center" }}>
+                No Result Found
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default DonorList;
+
+// import React, {useState, useEffect} from 'react';
+// import { Link } from 'react-router-dom';
+
+// const ProductList =()=>{
+//     const [products, setProducts] = useState([])
+   
+//     useEffect(()=>{
+//         getProducts();
+//     }, []);
+
+//     const getProducts = async ()=>{
+//         let result = await fetch('http://localhost:3050/products',{
+//             headers:{
+//                 authorization: JSON.parse(localStorage.getItem('token'))
+//             }
+//         });
+//         result = await result.json();
+//         setProducts(result);
+//     }
+//    // console.warn("products",products);
+// const deleteProduct = async (id)=>{
+//     let result = await fetch(`http://localhost:3050/product/${id}`,{
+//         method:"Delete"
+//     });
+//     result = await result.json()
+//     if(result)
+//     {
+//         alert("record is deleted")
+//         getProducts();
+//     }
+// }
+// const searchHandle = async (event) =>{
+//     let key = event.target.value;
+//     if(key){
+//         let result = await fetch(`http://localhost:3050/product/${key}`);
+//         result =await result.json();
+//         if(result){
+//             setProducts(result)
+//         }
+//     }else{getProducts()
+        
+//     }
+// }
+   
+//     return(
+//         <div className='ProductList'>
+//             <h3>Product List</h3>
+//             <input className='search-product-box' type="text" placeholder='Search Product'
+//             onChange={searchHandle}/>
+//             <ul>
+//                 <li>S. No</li>
+//                 <li>Name</li>
+//                 <li>Price</li>
+//                 <li>Category</li>
+//                 <li>Company</li>
+//                 <li>Operation</li>
+//             </ul>
+//             {
+//                products.length>0 ? products.map((item,index)=>
+//                  <ul key={item._id}>
+//                 <li>{index+1}</li>
+//                 <li>{item.name}</li>
+//                 <li>$ {item.price}</li>
+//                 <li>{item.category}</li>
+//                 <li>{item.company}</li>
+//                 <li><button onClick={()=>deleteProduct(item._id)}>Delete</button>
+//                 <Link to={"/update/"+item._id}>Update</Link>
+//                 </li> 
+//             </ul>
+//                 )
+//                 :<h1>No Result found</h1>
+//             }
+          
+//         </div>
+//     )
+// }
+
+
+//--------------------------------------------------
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './DonorProfile.css'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUser } from '@fortawesome/free-solid-svg-icons'
+import { 
+  faHospital, 
+  faPhone, 
+  faLocationDot, 
+  faCalendarDays 
+} from '@fortawesome/free-solid-svg-icons'
+const DonorProfile = () => {
+
+  const [cand, setCand] = useState([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    getCand();
+  }, []);
+
+  const getCand = async () => {
+    try {
+      const token=localStorage.getItem("token")
+      const res = await fetch("http://localhost:50333/donorlist/698ba6f50b19f4d31734646c", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error("Server Error");
+      }
+
+      const result = await res.json();
+      setCand(result);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className='D1'>
+
+      <div class="profile-icon">
+        <FontAwesomeIcon icon={faUser} size="9x" style={{ color: "#c2858e" }} />
+      </div>
+      <center>
+        <div className='donor'>{cand ? (
+          <><tr className='name'>{cand.name}</tr>
+            <tr>Age: {cand.age}</tr>
+            <tr>BloodType: {cand.bloodGrp}</tr></>
+        ) : (
+          <tr>
+            <td colSpan="10" style={{ textAlign: "center" }}>
+              No Result Found
+            </td>
+          </tr>
+        )}</div>
+
+        <br></br>
+        <hr></hr>
+      </center>
+      <br></br><br></br>
+<div className='D2'>
+      <div className='d1'><tr><FontAwesomeIcon icon={faHospital} size="1x" style={{ color: "#f1a7b3" }}/> Hospital: St.John's Medical Center</tr>
+        <hr></hr>
+        <tr><FontAwesomeIcon icon={faLocationDot} size="1x" style={{ color: "#f1a7b3" }}/> Location :{cand.addrs}</tr>
+        <hr></hr>
+        <tr><FontAwesomeIcon icon={faCalendarDays} size="1x" style={{ color: "#f1a7b3" }} /> Needed By: April 25, 2025</tr>
+        <hr></hr>
+        <tr><FontAwesomeIcon icon={faPhone} size="1x" style={{ color: "#f1a7b3" }}/> Contact: +91 {cand.mobno}</tr></div>
+      <div className='d2'></div>
+</div>
+    </div>
+  );
+};
+
+export default DonorProfile;
+
+//--------------------------------------------------------------------------------------
+import react, {useEffect, useState} from 'react'
+import { useNavigate } from 'react-router-dom'
+
+const DonorRegister= ()=>{
+    const [name,setName]=useState("");
+    const [addrs,setAddress]=useState("");
+    const [age,setAge]=useState("");
+    const [gen,setGen]=useState("");
+    const [email,setEmail]=useState("");
+    const [fname,setFName]=useState("");
+    const [mname,setMName]=useState("");
+    const [bloodGrp,setBloodGrp]=useState("");
+    const [city,setCity]=useState("");
+    const [mobno,setMobNo]=useState("");
+    const navigate=useNavigate();
+    
+    useEffect(()=>{
+        const auth=localStorage.getItem("user");
+        if(auth){
+            navigate('/');
+        } 
+    },[navigate])
+    
+
+   const collectData = async () => {
+  try {
+    console.log(name,addrs,age,gen,email,fname,mname,bloodGrp,city,mobno);
+
+    const response = await fetch("http://localhost:50333/donorRegister", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name,addrs,age,gen,email,fname,mname,bloodGrp,city,mobno }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Server error");
+    }
+
+    const result = await response.json();
+    console.log(result);
+
+    localStorage.setItem("user", JSON.stringify(result.result));
+    localStorage.setItem("token", JSON.stringify(result.auth));
+
+    navigate("/");
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Registration failed. Check backend & console.");
+  }
+};
+
+  return (
+    <div className="form-container">
+      <div className="form-card">
+        <h3>Donor's Registration Form</h3>
+
+
+        <form action='#' method="post">
+            <label>Full Name</label>
+            <input
+                  type="text"
+                  placeholder="Enter Full Name"
+                  onChange={(e) => setName(e.target.value)}
+                />
+             <label>Enter Address</label>
+            <input
+                  type="text"
+                  placeholder="Enter Full Address"
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+            <label>Enter Age</label>
+            <input
+                  type="text"
+                  placeholder="Enter Age"
+                  onChange={(e) => setAge(e.target.value)}
+                /> 
+            <label>Select gender</label>    
+             <select name="gender" required>
+                <option value=""  onChange={(e) => setGen(e.target.value)}>Select</option>
+                <option>Male</option>
+                <option>Female</option>
+                <option>others</option>
+            </select>    
+           
+            <label>Enter City</label>
+            <input
+                  type="text"
+                  placeholder="Enter City"
+                  onChange={(e) => setCity(e.target.value)}
+                /> 
+            <label>Enter Father's Name</label>
+            <input
+                  type="text"
+                  placeholder="Enter Father's Name"
+                  onChange={(e) => setFName(e.target.value)}
+                />
+            <label>Enter Mother's Name</label>
+            <input
+                  type="text"
+                  placeholder="Enter Mother's Name"
+                  onChange={(e) => setMName(e.target.value)}
+                /> 
+            <label>Select Blood Group</label>
+            <select name="blood_group" required>
+                <option value=""  onChange={(e) => setBloodGrp(e.target.value)}>Select</option>
+                <option>A+</option><option>A-</option>
+                <option>B+</option><option>B-</option>
+                <option>AB+</option><option>AB-</option>
+                <option>O+</option><option>O-</option>
+            </select>
+              <label>Enter E-Mail</label>
+            <input
+                  type="text"
+                  placeholder="Enter E-Mail"
+                  onChange={(e) => setEmail(e.target.value)}
+                /> 
+            <label>Enter Mobile No</label>
+            <input
+                  type="text"
+                  placeholder="Enter Mobile No"
+                  onChange={(e) => setMobNo(e.target.value)}
+                /> 
+                <button type="submit" onClick={collectData}
+                />    
+        </form>
+       
+      </div>
+    </div>
+  );
+};
+
+export default DonorRegister;
+
+
+//-------------------------------------------------------------------------------------------
+import React,{useEffect,useState} from 'react'
+import {Link, useNavigate } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faHospital } from "@fortawesome/free-solid-svg-icons";
+import { faHospitalUser } from "@fortawesome/free-solid-svg-icons";
+import { faHandHoldingHeart } from "@fortawesome/free-solid-svg-icons";
+import { faBoxesStacked } from "@fortawesome/free-solid-svg-icons";
+import { faWarehouse } from "@fortawesome/free-solid-svg-icons";
+import "./SignUp.css";
+import DL from "./DonorList";
+import SL from './StokeBloodList';
+import IN from "./Inventory";
+import BR from'./BloodRecord';
+import RI from './donorInfo';
+import HS from './hospitals';
+import AHS from './AddHospitals';
+const Homepage=()=>{
+const [donorlist,setDonorlist]=useState({})
+const [showDiv,setShowDiv]=useState(null)
+const [showDiv2,setShowDiv2]=useState(true)
+const [showDiv3,setShowDiv3]=useState(2)
+const [showInventoryForm, setShowInventoryForm] = useState(false);
+         const navigate=useNavigate();
+//  const ShowDiv=()=>{
+//     setShowDiv[](True)
+//  }
+
+ const close=()=>{
+     
+       setShowDiv3(2);
+  }
+
+  const openDiv3=()=>{
+    setShowDiv3(3);
+  }
+     useEffect(()=>{
+        const token=localStorage.getItem("token");
+        if(!token){
+            navigate("/login");
+            return;
+        }
+        getDonorlist()
+     },[])
+ const getDonorlist=async ()=>{
+        const token=localStorage.getItem("token");
+        const res=await fetch("http://localhost:50333/donorlist",{
+            headers:{
+                Authorization: `Bearer ${token}` 
+            },
+        });
+        console.log("Status:", res.status);
+console.log("Status text:", res.statusText);
+      if (!res.ok) {
+    throw new Error("Server error");
+}
+
+        const result = await res.json();
+        setDonorlist(result)
+      
+    }
+
+return(
+<div className='homepage'>
+
+    <div className='left'>
+        <Link onClick={()=>setShowDiv(1)}><div className='left-div'> 
+            <h2><FontAwesomeIcon icon={faWarehouse}/>
+             Inventory</h2></div>
+            </Link>
+        <Link onClick={()=>setShowDiv(2)}><div className='left-div'>
+            <h2><FontAwesomeIcon icon={faHospitalUser} />
+             donor</h2></div>
+            </Link> 
+        <Link onClick={()=>setShowDiv(3)}><div className='left-div'>
+            <h2><FontAwesomeIcon icon={faHospital}  />
+             Hospitals</h2> </div>
+            </Link> 
+   </div>
+
+   <div className='right'>
+    {/* { showDiv===1 &&
+    <div>
+    <a href="/donorregistration">
+    <div className='inv'>+inventory</div>
+    </a>
+    <div>{<SL/>}</div>  
+</div>} */}
+
+ {showDiv===1 &&(
+    <div >
+   <Link onClick={() => {setShowInventoryForm(true)
+                        setShowDiv2(false)}}><div className='inv' >
+                            <FontAwesomeIcon icon={faWarehouse} />+inventory</div>
+                            </Link> 
+    {showInventoryForm && (<IN setShowForm={setShowInventoryForm} 
+                               setShowdiv2={setShowDiv2}/>
+     )}
+         { showDiv2 &&(
+            <div className='indiv'> <BR /></div>)}
+           
+
+          </div>
+        )}
+
+{ showDiv===2 &&
+    <div >
+    
+    <div className='inv'>
+        <FontAwesomeIcon icon={faHospitalUser} />
+        +Donor Information
+        </div>
+   
+    <div className='indiv'>{<RI/>}</div>
+</div>}
+
+{ showDiv===3 &&
+    <div >
+   <Link onClick={openDiv3} >
+    <div className='inv'>
+        <FontAwesomeIcon icon={faHospital}  />
+        +Add Hospitals</div>
+     </Link>
+    {showDiv3===3 &&  <div className='indiv'>
+        <div className="close" onClick={close}>	&#10006;</div>
+        {<AHS/>}
+        </div>    }
+  {showDiv3===2 && <div className='indiv'>{<HS/>}</div>  }
+</div>}
+   </div>
+   
+</div>
+);
+}
+export default Homepage;
+
+
+
+ {/* <div >
+            <a href='http://localhost:3000/signup'>SignUp</a>
+        </div>
+        
+    <div>
+        <a href='http://localhost:3000/donorregistration'>Donor Registration</a>
+    </div>
+    
+    <div>
+        <a href='http://localhost:3000/donorlist'>Donors divst</a>
+    </div>
+        
+    <div>
+         <a href='http://localhost:3000/exchangeblooddivst'>Exchange Blood</a>
+    </div>
+       
+    <div>
+         <a href='http://localhost:3000/outstokeblooddivst'>Out-Stoke Blood divst</a>
+    </div>
+    
+    <div>
+        <a href='http://localhost:3000/stokeblooddivst'>Stoke Blood divst</a>
+    
+    </div>
+        
+    <div>
+        <a href='http://localhost:3000/ngoinfo'>NGO Info</a>
+    </div> */}
+  
+
+    import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './DR.css';
+
+const Hospitals = () => {
+
+  const [hosp, setHosp] = useState([]);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    getHosp();
+  }, []);
+
+  const getHosp = async () => {
+    try {
+      const token=localStorage.getItem("token");
+      const res = await fetch("http://localhost:50333/hospitals", {
+        
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error("Server Error");
+      }
+
+      const result = await res.json();
+      setHosp(result);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className='list' >
+      
+      <table className='t1'>
+        <thead>
+          <tr>
+            <td colSpan={5}>
+              <div className='srch'>
+                <input 
+                  className='search'
+                  type="text"
+                  placeholder='Search by hospital name'
+                />
+                <button className='searchbtn'>OK</button>
+              </div>
+            </td>
+
+            <td colSpan={5}>
+              <div className='srch2'>
+                <select className='fltr'>
+                  <option selected>+ Add Filter</option>  
+                  <option>License ID</option>
+                  <option>City</option>
+                  <option>Status</option>
+                  </select>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <th>Hospital Name</th>
+            <th>License ID</th>
+            <th>Address</th>
+            <th>City</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Emergency Contact</th>
+            <th>Available Units</th>
+            <th>Total Requests</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {hosp.length > 0 ? (
+            hosp.map((item, idx) => (
+              <tr key={item._id || idx}>
+                <td>{item.hname}</td>
+                <td>{item.licenseId}</td>
+                <td>{item.address}</td>
+                <td>{item.city}</td>
+                <td>{item.email}</td>
+                <td>{item.phone}</td>
+                <td>{item.emergencyContact}</td>
+                <td>{item.availableUnits}</td>
+                <td>{item.totalRequests}</td>
+                <td>{item.status}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="10" style={{ textAlign: "center" }}>
+                No Result Found
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+    </div>
+  );
+};
+
+export default Hospitals;
+
+//--------------------------------------------------------------------------------
+
+
+
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./inv.css";
+
+const Invent = ({ setShowForm, setShowdiv2 }) => {
+  const [bloodGrp, setBloodGrp] = useState("");
+  const [inventoryType, setInventoryType] = useState("in");
+  const [Qty, setQty] = useState("");
+  const [email, setEmail] = useState("");
+  const [item, setItem] = useState([]);
+  const navigate = useNavigate();
+
+  // ---------------- CANCEL ----------------
+  const cancelData = () => {
+    setBloodGrp("");
+    setQty("");
+    setEmail("");
+    setInventoryType("in");
+    
+    
+  };
+   //-----------------CLOSE---------------------------------------------
+  const close=()=>{
+     setBloodGrp("");
+    setQty("");
+    setEmail("");
+    setInventoryType("in");
+       setShowForm(false);
+       setShowdiv2(true);
+  }
+   // ---------------- FETCH STOCK ----------------
+  const stock = async () => {
+    try {
+      const token=localStorage.getItem("token")
+      const res = await fetch("http://localhost:50333/bloodstock", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+      });
+
+      const data = await res.json();
+      setItem(data);
+    } catch (err) {
+      console.error("Stock fetch error:", err);
+    }
+  };
+
+  // ---------------- CHECK INPUT ----------------
+  const checkInput = (value) => {
+    if (item.length > 0 && bloodGrp) {
+      const available = item[0][bloodGrp];
+
+      if (value > available) {
+        alert(`Only ${available} ml available`);
+        setQty("");
+      }
+    }
+  };
+
+  // ---------------- SUBMIT ----------------
+  const collectData = async (e) => {
+    e.preventDefault();
+console.log(bloodGrp, inventoryType, Qty, email);
+    try {
+      const response = await fetch(
+        "http://localhost:50333/addInventory",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            bloodGrp,
+            inventoryType,
+            Qty,
+            email,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Server error");
+      }
+
+      const result = await response.json();
+
+      localStorage.setItem("user", JSON.stringify(result.result));
+      localStorage.setItem("token", JSON.stringify(result.auth));
+
+      cancelData();
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Operation failed. Check backend.");
+    }
+  };
+
+  return (
+    <div className="form-container1">
+      <div className="form-card1">
+        <div className="container3">
+          <form onSubmit={collectData}>
+            <div className="div2" style={{marginTop:"0%"}}>
+              <div>Manage Blood Record</div>
+
+              <div className="rdobtn">
+                <label>
+                  <input
+                    type="radio"
+                    value="in"
+                    name="intType"
+                    checked={inventoryType === "in"}
+                    onChange={(e) =>
+                      setInventoryType(e.target.value)
+                    }
+                  />
+                  IN
+                </label>
+
+                <label>
+                  <input
+                    type="radio"
+                    value="out"
+                    name="intType"
+                    checked={inventoryType === "out"}
+                    onChange={(e) =>
+                      setInventoryType(e.target.value)
+                    }
+                  />
+                  OUT
+                </label>
+                <div className="close" onClick={close}>	&#10006;</div>
+              </div>
+              
+            </div>
+
+            <hr />
+
+            {/* ---------------- IN FORM ---------------- */}
+            {inventoryType === "in" && (
+              <div className="d11" style={{marginTop:"0%"}}>
+                <label>Blood Type</label>
+                <select
+                  value={bloodGrp}
+                  onChange={(e) =>
+                    setBloodGrp(e.target.value)
+                  }
+                  required
+                >
+                  <option value="">Select</option>
+                  <option>A+</option>
+                  <option>A-</option>
+                  <option>B+</option>
+                  <option>B-</option>
+                  <option>AB+</option>
+                  <option>AB-</option>
+                  <option>O+</option>
+                  <option>O-</option>
+                </select>
+
+                <label>Qty (ML)</label>
+                <input
+                  type="number"
+                  value={Qty}
+                  min="1"
+                  onChange={(e) =>
+                    setQty(e.target.value)
+                  }
+                  required
+                />
+
+                <label>Donor Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) =>
+                    setEmail(e.target.value)
+                  }
+                  required
+                />
+
+                <div className="cs">
+                  <button
+                    type="button"
+                    onClick={cancelData}
+                  >
+                    Cancel
+                  </button>
+
+                  <button type="submit">
+                    Submit
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ---------------- OUT FORM ---------------- */}
+            {inventoryType === "out" && (
+              <div className="d11" style={{marginTop:"0%"}}>
+                <label>Blood Type</label>
+                <select
+                  value={bloodGrp}
+                  onChange={(e) =>
+                    setBloodGrp(e.target.value)
+                  }
+                  required
+                >
+                  <option value="">Select</option>
+                  <option>A+</option>
+                  <option>A-</option>
+                  <option>B+</option>
+                  <option>B-</option>
+                  <option>AB+</option>
+                  <option>AB-</option>
+                  <option>O+</option>
+                  <option>O-</option>
+                </select>
+
+                <label>Qty (ML)</label>
+                <input
+                  type="number"
+                  value={Qty}
+                  min="1"
+                  onFocus={stock}
+                  max={
+                    item.length > 0 && bloodGrp
+                      ? item[0][bloodGrp]
+                      : undefined
+                  }
+                  onChange={(e) => {
+                    setQty(e.target.value);
+                    checkInput(e.target.value);
+                  }}
+                  required
+                />
+
+                <label>Hospital Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) =>
+                    setEmail(e.target.value)
+                  }
+                  required
+                />
+
+                <div className="cs">
+                  <button
+                    type="button"
+                    onClick={cancelData}
+                  >
+                    Cancel
+                  </button>
+
+                  <button type="submit">
+                    Submit
+                  </button>
+                </div>
+              </div>
+            )}
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Invent;
+
+// import react, { useEffect, useState } from 'react'
+// import { useNavigate } from 'react-router-dom'
+// import './DR.css'
+
+// const Invent = ({ setShowForm,setShowdiv2 }) => {
+
+//     const [bloodGrp, setBloodGrp] = useState("");
+//     const [inventoryType, setInventoryType] = useState("in");
+//     const [Qty, setQty] = useState("");
+//     const [email, setEmail] = useState("");
+//     //const [showDiv,setShowDiv]=useState(1)
+//     const [item, setItem] = useState([])
+//     const navigate = useNavigate();
+//     const [shutDiv,setShutDiv]=useState(true);
+
+    
+//     // useEffect(()=>{
+//     //     const auth=localStorage.getItem("user");
+//     //     if(auth){
+//     //         navigate('/donorregistration');
+//     //     } 
+//     // },[navigate])
+//   const cancelData = () => {
+//     setBloodGrp("");
+//     setQty("");
+//     setEmail("");
+//     setInventoryType("");
+//     // setShowForm(false);
+//     // setShowdiv2(true);
+
+    
+// };
+  
+// const stock=async ()=>{
+//      const res=await fetch("http://localhost:50333/bloodstock",{
+//             method:"get",
+//             headers:{
+//                 authorization:JSON.parse(localStorage.getItem('token'))
+//             }
+//            })
+//            const c=await res.json()
+           
+//            setItem(c)
+//            console.warn(c[0]["B-"])
+//             const count={...item}
+//             console.warn(item[0])
+//             console.warn("jii")
+// }
+
+
+// function checkInput(){
+//     let val=document.getElementById("qty").value;
+//     if(val>item[0][bloodGrp]){
+//         alert("Only"+item[0][bloodGrp]+"ml available")
+//     }
+// }
+//     const collectData = async (e) => {
+//         e.preventDefault();
+
+//         try {
+//             console.log(bloodGrp, inventoryType, Qty, email);
+
+//             const response = await fetch("http://localhost:50333/addInventory", {
+//                 method: "POST",
+//                 headers: {
+//                     "Content-Type": "application/json",
+//                 },
+//                 body: JSON.stringify({ bloodGrp, inventoryType,Qty, email }),
+//             });
+          
+//             if (!response.ok) {
+//                 throw new Error("Server error");
+//             }
+//            cancelData();
+//             const result = await response.json();
+//             console.log(result);
+
+//             localStorage.setItem("user", JSON.stringify(result.result));
+//             localStorage.setItem("token", JSON.stringify(result.auth));
+
+
+           
+//         } 
+        
+//         catch (error) {
+//             console.error("Error:", error);
+//             alert("Registration failed. Check backend & console.");
+//         }
+
+       
+//     };
+
+//     return (
+//         <div className="form-container1">
+//             <div className="form-card1">
+//                 <div class="container1">
+                   
+//                     <form onSubmit={collectData}>
+//                    <div className='div2'>
+//   <div>Manage Blood Record</div>
+
+  
+//  <div className='rdobtn'>
+//   <label>
+//     <input
+//       className="intType"
+      
+//       type="radio"
+//       value="in"
+//       name="intType"
+//       checked={inventoryType==="in"}
+//       defaultChecked
+//       onChange={(e) => {setInventoryType(e.target.value)
+//                        }
+//       }
+//     /> IN&nbsp;&nbsp;
+//   </label>
+
+//   <label>
+//     <input
+//       className="intType"
+//       type="radio"
+//       value="out"
+//       checked={inventoryType==="out"}
+//       name="intType"
+//       onChange={(e) =>{setInventoryType(e.target.value)
+                      
+//                        }}
+//     /> OUT
+//   </label>
+//   </div>
+// </div>
+
+//  <hr></hr>
+                    
+//                     {inventoryType === "in"&&    <div className='d11'>
+//                             <label>Blood_Type</label>
+//                             <select name="blood_group" onChange={(e) => setBloodGrp(e.target.value)} required>
+//                                 <option value=""  >Select</option>
+//                                 <option>A+</option><option>A-</option>
+//                                 <option>B+</option><option>B-</option>
+//                                 <option>AB+</option><option>AB-</option>
+//                                 <option>O+</option><option>O-</option>
+//                             </select>
+
+//                             <label>Qty(ML)</label>
+//                             <input
+//                                 type="number"
+                              
+//                                 onChange={(e) => setQty(e.target.value)}
+//                                 min="1"
+//                                 required
+//                             />
+
+//                             <label>Donor_Email</label>
+//                             <input
+//                                 type="text"
+//                                 placeholder=""
+//                                 onChange={(e) => setEmail(e.target.value)}
+//                                 required
+//                             />
+//                             <div className='cs'>
+//                             <button className='cs1' type="button" value="Cancel" onClick={cancelData}
+//                             >Cancel</button>&nbsp;&nbsp;&nbsp;  
+//                             <button className='cs1' type="submit" value="Submit" >Submit</button>
+
+                            
+//                                      </div>
+
+//                            </div>}
+
+
+//                             {inventoryType === "out" &&    <div className='d11'>
+//                             <label>Blood_Type</label>
+//                             <select name="blood_group" onChange={(e) => setBloodGrp(e.target.value)} required>
+//                                 <option value=""  >Select</option>
+//                                 <option>A+</option><option>A-</option>
+//                                 <option>B+</option><option>B-</option>
+//                                 <option>AB+</option><option>AB-</option>
+//                                 <option>O+</option><option>O-</option>
+//                             </select>
+
+//                             <label>Qty(ML)</label>
+//                             <input
+//                                 id="qty"
+//                                 type="number"
+//                                 onClick={stock}
+//                                  min={1}
+//                                 max={item[0][bloodGrp]}
+//                                 onChange={(e) => {  checkInput()
+//                                                     setQty(e.target.value)}}
+                             
+//                                 required
+//                             />
+
+//                             <label>Hospital_Email</label>
+//                             <input
+                            
+//                                 type="text"
+//                                 placeholder=""
+//                                 onChange={(e) => setEmail(e.target.value)}
+//                                 required
+//                             />
+//                             <div className='cs'>
+//                             <button className='cs1' type="button" value="Cancel" onClick={cancelData}
+//                             >Cancel</button>&nbsp;&nbsp;&nbsp;  
+//                             <button className='cs1' type="submit" value="Submit" >Submit</button>
+
+                            
+//                                      </div>
+
+//                            </div>}
+//                     </form>
+//                 </div>
+                
+//             </div>
+//         </div>
+//     );
+// };
+
+// export default Invent;
+
+
+
+import react, { useEffect, useState } from 'react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+
+import './SignUp.css'
+const Login = () => {
+
+  // const [data,setData]=useState([]);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+
+  }, [navigate]);
+
+  const collectData = async (e) => {
+    e.preventDefault();
+
+    const res = await fetch(`http://localhost:50333/login`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    const result = await res.json();
+   console.warn(result);
+    if (res.status === 200) {
+      localStorage.setItem("token", result.auth);
+      console.warn(result.auth)
+    
+      console.warn()
+      if (result.auth!=undefined) {
+         navigate('/user');
+      }else {
+      alert(result.result);
+    }
+    
+    } else {
+      alert(result.result);
+    }
+
+  }
+
+  return (
+    <div>
+      <center>
+        <div class="wrapper" >
+
+          <div class="login">
+            <h1><span>Login</span></h1>
+          </div>
+          <div class="input-box">
+
+            <label for="user_id" >Email</label>
+            <input type="email" id="user_id" class="input_field" required placeholder="Enter your email" value={email}
+              onChange={(e) => setEmail(e.target.value)} />
+
+          </div>
+          <div class="input-box">
+            <label for="user_password">Password</label>
+            <input type="password" id="user_password" class="input_field" required placeholder="Enter your password" value={password}
+              onChange={(e) => setPassword(e.target.value)} />
+          </div>
+          <label><input type="checkbox" />Remember me</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          <a class="a1" href="" >  forgot password?</a><br></br>
+
+          <button class="btn" type="submit" onClick={collectData}>login</button>
+
+
+        </div>
+      </center>
+    </div>
+  )
+
+}
+export default Login;
+
+
+{/*
+  
+  "name": "Sakshi",
+  "email": "sakshi@gmail.com",
+  "password": "hashedpassword",
+  "bloodGrp": "O+",
+  "phone": "9876543210",
+  
+  "healthStatus": {
+    "nonSmoker": true,
+    "noRecentIllness": true,
+   "noInfectiousDisease": true,
+    "hemoglobin": 13.5,
+    "weight": 55
+  },
+  "lastDonationDate":"24 jan 2020"
+*/}
+
+
+import react from 'react'
+import { Navigate } from "react-router-dom";
+
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return <Navigate to="/" />;
+  }
+
+  return children;
+};
+
+export default ProtectedRoute;
+
+//------------------------------------
+
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./receiver.css";
+
+const ReceiverRegistration = () => {
+
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [gen, setGen] = useState("");
+  const [bloodGrp, setBloodGrp] = useState("");
+  const [HospitalName, setHospital] = useState("");
+  const [DoctorName, setDoctor] = useState("");
+  const [unitReq, setUnits] = useState("");
+  const [Reason, setReason] = useState("");
+  const [reqDate, setReqDate] = useState("");
+  const [reqTime, setReqTime] = useState("");
+  const [requester, setRequester] = useState("");
+  const [mobno, setMobNo] = useState("");
+  const [email, setEmail] = useState("");
+
+  const navigate = useNavigate();
+
+  const collectData = async (e) => {
+    e.preventDefault(); // prevent reload
+
+    if (mobno.length !== 10) {
+      alert("Mobile number must be 10 digits");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:50333/request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          age,
+          gen,
+          bloodGrp,
+          HospitalName,
+          DoctorName,
+          unitReq,
+          Reason,
+          reqDate,
+          reqTime,
+          requester,
+          mobno,
+          email
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert("Request Submitted Successfully");
+        navigate("/");
+      } else {
+        alert("Server error");
+      }
+
+    } catch (error) {
+      console.error(error);
+      alert("Backend not connected");
+    }
+  };
+
+  return (
+
+    <div className="container">
+        <div className="div">
+      <h1>🩸 Blood Request Form</h1>
+
+      <form onSubmit={collectData}>
+
+        <div className="section-title">Patient Information</div>
+
+        <input
+          type="text"
+          placeholder="Patient Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+
+        <input
+          type="number"
+          placeholder="Age"
+          value={age}
+          onChange={(e) => setAge(e.target.value)}
+          required
+        />
+
+        <select value={gen} onChange={(e) => setGen(e.target.value)} required>
+          <option value="">Select Gender</option>
+          <option>Male</option>
+          <option>Female</option>
+          <option>Other</option>
+        </select>
+
+        <select
+          value={bloodGrp}
+          onChange={(e) => setBloodGrp(e.target.value)}
+          required
+        >
+          <option value="">Select Blood Group</option>
+          <option>A+</option>
+          <option>A-</option>
+          <option>B+</option>
+          <option>B-</option>
+          <option>AB+</option>
+          <option>AB-</option>
+          <option>O+</option>
+          <option>O-</option>
+        </select>
+
+        <input
+          type="text"
+          placeholder="Hospital Name"
+          value={HospitalName}
+          onChange={(e) => setHospital(e.target.value)}
+          required
+        />
+
+        <input
+          type="text"
+          placeholder="Doctor Name"
+          value={DoctorName}
+          onChange={(e) => setDoctor(e.target.value)}
+          required
+        />
+
+        <div className="section-title">Blood Requirement Details</div>
+
+        <input
+          type="number"
+          placeholder="Units Required"
+          value={unitReq}
+          onChange={(e) => setUnits(e.target.value)}
+          required
+        />
+
+        <textarea
+          placeholder="Reason for Transfusion"
+          value={Reason}
+          onChange={(e) => setReason(e.target.value)}
+          required
+        ></textarea>
+
+        <input
+          type="date"
+          value={reqDate}
+          onChange={(e) => setReqDate(e.target.value)}
+          required
+        />
+
+        <input
+          type="time"
+          value={reqTime}
+          onChange={(e) => setReqTime(e.target.value)}
+          required
+        />
+
+        <div className="section-title">Requester Details</div>
+
+        <input
+          type="text"
+          placeholder="Requester Name"
+          value={requester}
+          onChange={(e) => setRequester(e.target.value)}
+          required
+        />
+
+        <input
+          type="tel"
+          placeholder="10 Digit Mobile"
+          value={mobno}
+          onChange={(e) => setMobNo(e.target.value)}
+          required
+        />
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <button type="submit" className="submit-btn">
+          Submit Request
+        </button>
+
+      </form>
+      </div>
+    </div>
+  );
+};
+
+export default ReceiverRegistration;
+
+// import React, { useEffect, useState } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import './ReqInfo.css';
+
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+// import {
+//   faUser,
+//   faPhone,
+//   faEnvelope
+// } from '@fortawesome/free-solid-svg-icons';
+
+// const ReqInfo = () => {
+
+//   const id = localStorage.getItem("selectedId");
+//   const navigate = useNavigate();
+
+//   const [cand, setCand] = useState(null);
+
+//   useEffect(() => {
+//     if (id) {
+//       getCand();
+//     }
+//   }, [id]);
+
+//   const getCand = async () => {
+//     try {
+//       const res = await fetch(`http://localhost:50333/donor/699611962ae6c4669f4ae53b`, {
+//         headers: {
+//           authorization: JSON.parse(localStorage.getItem('token'))
+//         }
+//       });
+
+//       if (!res.ok) {
+//         throw new Error("Server Error");
+//       }
+
+//       const result = await res.json();
+//       setCand(result);
+
+//     } catch (err) {
+//       console.error("Fetch Error:", err);
+//     }
+//   };
+
+//   if (!cand) {
+//     return <div>Loading donor information...</div>;
+//   }
+
+//   return (
+//     <div className='D1'>
+
+//       {/* LEFT PROFILE SECTION */}
+//       <div className='d1'>
+//         <div className="profile-icon">
+//           <FontAwesomeIcon icon={faUser} size="9x" style={{ color: "#c2858e" }} />
+//         </div>
+
+//         <div className='d11'>
+//           <ul>
+//             <li><strong>Name:</strong> {cand.name}</li><hr />
+//             <li><strong>Gender:</strong> {cand.gen}</li><hr />
+//             <li><strong>Age:</strong> {cand.age}</li><hr />
+//             <li><strong>Blood Type:</strong> {cand.bloodGrp}</li><hr />
+//             <li><strong>Last Donation:</strong> 4 Months Ago</li>
+//           </ul>
+//         </div>
+
+//         <div className='d12'>
+//           <div>
+//             <FontAwesomeIcon icon={faPhone} style={{ color: "#f1a7b3" }} />
+//             &nbsp;+91 {cand.mobno}
+//           </div>
+
+//           <div>
+//             <FontAwesomeIcon icon={faEnvelope} style={{ color: "#f1a7b3" }} />
+//             &nbsp;{cand.email}
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* RIGHT REQUEST SECTION */}
+//       <div className='D2'>
+
+//         <div className='header'>
+//           <b>Blood Donor Request Profile</b>
+//           <br />
+//           Review & Approval
+//         </div>
+
+//         <ul className='reqDetails'>
+//           <div className='main'>Request Details</div>
+
+//           <li><strong>Patient Name:</strong> {cand.name}</li><hr />
+//           <li><strong>Hospital:</strong> City Central Hospital</li><hr />
+//           <li><strong>Location:</strong> {cand.addrs}</li><hr />
+//           <li><strong>Blood Needed:</strong> 2 Units</li><hr />
+//           <li><strong>Reason:</strong> Surgery - Urgent</li><hr />
+//           <li><strong>Request Date:</strong> April 15, 2024</li><hr />
+//           <li><strong>Additional Note:</strong> Immediate need for O+ donor.</li>
+//         </ul>
+
+//         <div className='bottomSections'>
+
+//           {/* HEALTH STATUS */}
+//           <div className='d21'>
+//             <ul className='reqDetails'>
+//               <div className='main'>Health Status</div>
+//               <li>No Recent Illness ✅</li><hr />
+//               <li>Non-Smoker ✅</li><hr />
+//               <li>No Infectious Disease ✅</li>
+//             </ul>
+//           </div>
+
+//           {/* DONATION HISTORY */}
+//           <div className='d22'>
+//             <ul className='reqDetails'>
+//               <div className='main'>Donation History</div>
+//               <li>Previous Donations: 3</li><hr />
+//               <li>Last Donation: 4 Months Ago</li><hr />
+//               <li>Eligibility: Eligible to Donate ✅</li>
+//             </ul>
+//           </div>
+
+//         </div>
+
+//         {/* ACTION BUTTONS */}
+//         <div className='D3'>
+//           <button className='approve'>✔ Approve Request</button>
+//           <button className='reject'>✖ Reject Request</button>
+//         </div>
+
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default ReqInfo;
+
+
+import React, { useEffect, useState } from 'react';
+import {useParams, useNavigate } from 'react-router-dom';
+import './ReqInfo.css'
+import DI from './donorInfo';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUser } from '@fortawesome/free-solid-svg-icons'
+import { 
+  faHospital, 
+  faPhone, 
+  faLocationDot, 
+  faCalendarDays 
+} from '@fortawesome/free-solid-svg-icons'
+import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
+
+
+
+const ReqInfo = (showDiv,showDiv3) => {
+
+  const id = localStorage.getItem("selectedId");
+  console.log("IDt:",id);
+  const [cand, setCand] = useState([]);
+  const navigate = useNavigate();
+  console.warn()
+//  useEffect(() => {
+//   if (id) {
+//     getCand();
+//   }
+// }, [id]);
+useEffect(() => {
+    getCand();
+}, []);
+
+
+
+  
+  
+  const getCand = async () => {
+    try {
+      
+      const res = await fetch(`http://localhost:50333/request/69a1d4bb33729ec801de90a3`, {
+        headers: {
+          authorization: JSON.parse(localStorage.getItem('token'))
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error("Server Error");
+      }
+
+      const result = await res.json();
+      setCand(result);
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (<>
+   
+
+    <div className='D1'>
+       
+     <div className='d1'>
+      <div class="profile-icon">
+        <FontAwesomeIcon icon={faUser} size="9x" style={{ color: "#c2858e" }} />
+      </div>
+      <br></br>
+      <div className='d11'>
+          <ul><li>Name: {cand.name}</li><hr></hr>
+            <li>Gender: {cand.age}</li><hr></hr>
+            <li>BloodType: {cand.bloodGrp}</li><hr></hr>
+             <li>Request Dtae: April 15,2024</li><hr></hr>
+            <li>Last Donation: 4 Months Ago</li>
+        </ul></div><hr></hr>
+        <div className='d12'>
+         <div><FontAwesomeIcon icon={faPhone} size="1x" style={{ color: "#f1a7b3" }}/>+91 {cand.mobno}</div>
+         <div><FontAwesomeIcon icon={faEnvelope} style={{ color: "#f1a7b3" }} /> {cand.email}</div>
+        </div>
+        </div>
+     
+     <div className='D2'>
+         <center>
+            <div className='header'>
+        <b>Blood Donor Request Profile</b><br></br>
+         Review & Approval
+          
+         </div>
+
+         </center>
+
+        <ul className='reqDetails'>
+        <div className='main'>Request Details</div>
+        <li>Patient Name: {cand.name}</li><hr></hr>
+        <li>Hospital: City Central hospital</li><hr></hr>
+        <li>Location: {cand.addrs}</li><hr></hr>
+        <li>Blood Needed: 2 units</li><hr></hr>
+        <li>Reason: Surgery-Urgent</li><hr></hr>
+        <li>Request Dtae: April 15,2024</li><hr></hr>
+        <li>Additinal Note: Immediate need for O+ donor.</li>
+        </ul>
+        <div>
+
+            <div className='d21'>  <ul className='reqDetails'>
+        <div className='main'>Heath Status</div>
+        <div>Reported as Healthy</div><hr></hr>
+        <li>No Recent illness    ✅</li><hr></hr>
+        <li>Non-Smoker           ✅</li><hr></hr>
+        <li>No Infection Disease ✅</li>
+        </ul></div>
+
+
+          <div className='d22'>  <ul className='reqDetails'>
+        <div className='main'>Donation History</div>
+        <div>Previous Donations: 3</div><hr></hr>
+        <li>Last Donation: 4 Months Ago</li><hr></hr>
+        <li>Eligibility: Eligible to Donate</li><hr></hr>
+        <li>No Infection Disease</li>
+        </ul></div>
+        </div>
+
+        <div className='D3'><button className='aprove'>✔Approve Request</button>
+     <button className='reject'>✖Reject Request</button></div>
+     </div>
+     
+    </div>
+    </>
+  );
+};
+
+export default ReqInfo;
+
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./SignUp.css";
+
+const SignUp = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+  const auth = localStorage.getItem("user");
+  if (auth) {
+    navigate("/signup");
+  }
+}, [navigate]);
+
+
+   const collectData = async () => {
+  try {
+    console.log(name, email, password);
+
+    const response = await fetch("http://localhost:50333/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Server error");
+    }
+
+    const result = await response.json();
+    console.log(result);
+
+    localStorage.setItem("user", JSON.stringify(result.result));
+    localStorage.setItem("token", JSON.stringify(result.auth));
+
+    navigate("/");
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Registration failed. Check backend & console.");
+  }
+};
+
+  return (
+
+    <div className="signup-container">
+      <div className="signup-card">
+       <center>
+
+        <table>
+           <tr>
+              <td>Username</td>
+              <td>
+                <input
+                  type="text"
+                  placeholder="Enter Username"
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </td>
+            </tr>
+
+             <tr>
+              <td>Email</td>
+              <td>
+                <input
+                  type="email"
+                  placeholder="Enter Email"
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </td>
+            </tr>
+
+            <tr>
+              <td>Password</td>
+              <td>
+                <input
+                  type="password"
+                  placeholder="Enter Password"
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </td>
+            </tr>
+
+            <tr>
+              <td colSpan="2">
+
+                <a href='/login'>Already Registered?</a>
+                <input
+                  type="button"
+                  value="Sign Up"
+                  onClick={collectData}
+                />
+              </td>
+            </tr>
+         
+        </table>
+        </center>
+      </div>
+    </div>
+
+    
+  );
+};
+
+export default SignUp;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useEffect, useState } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// const SignUp = () => {
+//     const [name, setName] = useState("");
+//     const [password, setPassword] = useState("");
+//     const [email, setEmail] = useState("");
+//     const navigate = useNavigate();
+
+//     useEffect(()=>{
+//         const auth= localStorage.getItem('user');
+//         if(auth)
+//         {
+//             navigate('/')
+//         }
+//     })
+
+//     const collectData = async () => {
+//         console.warn(name, email, password)
+//         let result = await fetch('http://localhost:3050/register', {
+//             method: 'post',
+//             body: JSON.stringify({ name,email, password  }),
+//             headers: {
+//                 'Content-Type': 'application/json'
+//             },
+//         })
+//         result = await result.json()
+//         console.warn(result);
+//        localStorage.setItem("user",JSON.stringify(result.result));
+//        localStorage.setItem("token",JSON.stringify(result.auth));
+       
+//             navigate('/')
+    
+//     }
+//     return (
+//         <div className='register'>
+//             <h1>Register</h1>
+//             <input className='inputBox' type="text"
+//                 value={name} onChange={(e) => setName(e.target.value)} placeholder='Enter Name' />
+//             <input className='inputBox' type="text"
+//                 value={email} onChange={(e) => setEmail(e.target.value)} placeholder='Enter Email' />
+//             <input className='inputBox' type="password"
+//                 value={password} onChange={(e) => setPassword(e.target.value)} placeholder='Enter Password' />
+//             <button onClick={collectData} className='appButton' type='button'>Sign Up</button>
+//         </div>
+// )
+// }
+
+// export default SignUp;
+
+// // import { json } from "express";
+// import React ,{useEffect,useState} from "react";
+// import { useNavigate } from 'react-router-dom'
+// const SignUp=()=>{
+//     const [name,setName]=useState("");
+//     const [password,setPassword]=useState("");
+//     const navigate=useNavigate();
+
+
+// useEffect(()=>{
+//     const auth=localStorage.getItem('user');
+//     if(auth){
+//         navigate('/');
+//     }
+// },
+// [])
+
+// const collectData=async() =>{
+//   console.warn(name,password);
+//   let result= await fetch("https://localhost:50333/SignUp",{
+//     method:'post',
+//     body: JSON.stringify({name,password}),
+//     headers:{
+//         'Content-Type':'application/json'
+//     }
+//   })
+
+//   result=await result.json();
+//   console.warn(result);
+//   localStorage.setItem("user",JSON.stringify(result.result))
+//   navigate('/');
+
+// }
+
+// return(
+//   <div>
+//      <table align="center">
+//             <tr>
+//               <td width="200px" height="70px"><b>Enter Username</b></td>
+//               <td width="200px" height="70px"> 
+//                 <input type="text" name="un" placeholder="Enter Username"  onChange={(e) => setName(e.target.value)}></input>
+//               </td>
+//             </tr>
+//             <tr>
+//               <td width="200px" height="70px"><b>Enter Password</b></td>
+//               <td width="200px" height="70px"> 
+//                 <input type="text" name="un" placeholder="Enter Password" onChange={(e)=>setPassword(e.target.value)} ></input>
+//               </td>
+//             </tr>
+//             <tr>
+//               <td width="200px" height="70px"> 
+//                 <input id="button" type="submit" name="sub" value="Login" onClick={collectData}  ></input>
+//               </td>
+//             </tr>
+//           </table>
+//           </div>
+// )
+// }
+// export default SignUp
+
+
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './DR.css';
+
+const StokeBloodList = () => {
+ 
+  const [bloodCount, setBloodCount] = useState({
+    "A+": 0, "A-": 0,
+    "B+": 0, "B-": 0,
+    "O+": 0, "O-": 0,
+    "AB+": 0, "AB-": 0
+  });
+  
+ 
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    getCand();
+  }, []);
+const cancelData = () => {
+  setBloodCount({
+    "A+": 0, "A-": 0,
+    "B+": 0, "B-": 0,
+    "O+": 0, "O-": 0,
+    "AB+": 0, "AB-": 0
+  });
+}
+
+
+
+  const getCand = async () => {
+    try {
+      const res = await fetch("http://localhost:50333/bloodRecord", {
+        headers: {
+          authorization: JSON.parse(localStorage.getItem('token'))
+        }
+      });
+
+    
+
+      if (!res.ok) {
+        throw new Error("Server error");
+      }
+
+      const result = await res.json();
+
+      const count = { ...bloodCount };
+
+       let c=0
+      result.forEach((item) => {
+        if (count[item.bloodGrp] !== undefined) {
+          const qty = Number(item.Qty) || 0;
+
+          if (item.inventoryType === "in") {
+            count[item.bloodGrp] += qty;
+            c=+qty
+          } else if (item.inventoryType === "out") {
+            count[item.bloodGrp] -= qty;
+            c=-qty
+          }
+        }
+      });
+
+      setBloodCount(count);
+      console.warn(count['A+'])
+     
+  const response = await fetch("http://localhost:50333/bloodstock", {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    body: JSON.stringify({
+  "A+": count["A+"],
+  "A-": count["A-"],
+  "B+": count["B+"],
+  "B-": count["B-"],
+  "O+": count["O+"],
+  "O-": count["O-"],
+  "AB+": count["AB+"],
+  "AB-": count["AB-"]
+}),
+
+    });
+
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div>
+      <table className='tbl2'>
+        <thead>
+          <tr>
+            <th className='t2'>Blood Grp</th>
+            <th className='t2'>Qty</th>
+            <th className='t2'>Expiry</th>
+            <th className='t2'>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {Object.entries(bloodCount).map(([group, qty]) => {
+            const status =
+              qty > 15 ? "InStock"
+              : qty >= 5 ? "LowStock"
+              : "VeryLow";
+
+            return (
+              <tr key={group} className={status}>
+                <td className='t2'>{group}</td>
+                <td className='t2'>{qty}</td>
+                <td className='t2'>20 Feb 2026</td>
+                <td className='t3'>{status}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default StokeBloodList;
+
+
+import React, { useEffect, useState,useRef } from "react";
+
+import { Link } from 'react-router-dom'
+import { useNavigate } from "react-router-dom";
+import './Sign_UP'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faUser } from '@fortawesome/free-solid-svg-icons'
+import {
+  faDroplet,
+  faVial,
+  faHospital,
+  faPhone,
+  //faLocationDot,
+  faBriefcaseMedical,
+  faCalendarDays
+} from '@fortawesome/free-solid-svg-icons'
+import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
+import { faCamera } from "@fortawesome/free-solid-svg-icons";
+import { faImage } from "@fortawesome/free-solid-svg-icons";
+import { faBell } from "@fortawesome/free-solid-svg-icons";
+import { faLocationCrosshairs } from '@fortawesome/free-solid-svg-icons';
+
+const User = () => {
+
+  const [showDiv, setShowDiv] = useState(1);
+  const [showDiv2, setShowDiv2] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const dropdownRef = useRef(null);
+  const [open,setOpen] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const auth = localStorage.getItem("user");
+    if (auth) {
+      navigate();
+    }
+  }, [navigate]);
+
+  //--------------Edit Window--------------
+  const openEditWindow = () => {
+    setShowDiv(2)
+  }
+  const closeEditWindow = () => {
+    setShowDiv2(false);
+    setShowDiv(1)
+  }
+  //--------------View history-------------
+  const openViewHistory = () => {
+    setShowDiv(3)
+  }
+  const editProfileIcon = () => {
+    setShowPopup(true)
+  }
+
+  const [user, setUser] = useState(null);
+  const [remaining, setRem] = useState('')
+  const [lastDonationDate, setLDD] = useState(' ');
+
+  const daysLeft = (lastDate, gap) => {
+    const lastDon = new Date(lastDate);
+    lastDon.setHours(0, 0, 0, 0);
+    const nextDate = new Date(lastDon);
+    nextDate.setDate(lastDon.getDate() + gap);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = nextDate - today;
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }
+
+
+const toggleMenu = () => {
+  setOpen(prev => !prev);
+};
+
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem("token");
+      console.log("id", token)
+
+      //      if (!token) {
+      //   return;
+      // }
+
+      const res = await fetch("http://localhost:50333/profile", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+      console.log(lastDonationDate?.split("T")[0])
+      console.log(data)
+      setLDD(data.lastDonationDate?.split("T")[0]);
+      setUser(data);
+      if (data.lastDonationDate) {
+        const remaining = daysLeft(lastDonationDate, 90);
+        setRem(remaining);
+        console.log(remaining)
+      }
+    };
+
+    fetchProfile();
+
+
+     function handleClickOutside(event) {
+    if(dropdownRef.current && !dropdownRef.current.contains(event.target)){
+      setOpen(false);
+    }
+  }
+
+  document.addEventListener("mousedown",handleClickOutside)
+  
+  return ()=>{
+    document.removeEventListener("mousedown",handleClickOutside);
+  }
+
+
+  }, []);
+
+
+
+  if (!user) return <div>Loading...</div>;
+
+
+
+  return (
+    
+    <>
+
+      <body>
+        {showDiv === 1 && (
+          <div className='main-div'>
+
+            <div className='div1'>
+              <div>
+                <h1>Hello,{user.name}!</h1>
+                <li>Blood Group : {user.bloodGrp} |</li>
+                <li>Last Donation : {user.lastDonationDate?.split("T")[0]} 💚✔️ |</li><br />
+                <div className='div11'>
+                  {remaining <= 0
+                    ? `Eligible to donate ❤️ ${remaining}`
+                    : `Eligible in ${remaining} days`}
+                </div>
+              </div>
+
+
+
+              <center>
+              <div>
+                  <FontAwesomeIcon icon={faLocationCrosshairs} />
+              </div>
+
+
+                <div ref={dropdownRef}>
+                <div className="bell" onClick={toggleMenu}  >
+                  <FontAwesomeIcon icon={faBell} />
+                  <span className="notCount">3</span>
+                </div>
+
+                {open &&<div className="notification-dropdown">
+
+                  <div class="notification-header">
+                    Notifications
+                  </div>
+
+                  <div class="notification-item urgent">
+                    🩸 Urgent blood needed (A+)
+                  </div>
+
+                  <div class="notification-item">
+                    📅 Blood camp on 15 March
+                  </div>
+
+                  <div class="notification-item approved">
+                    ✅ Donation request approved
+                  </div>
+
+                  <div class="notification-footer">
+                    View All Notifications
+                  </div>
+
+                </div>}
+</div>
+
+                <div className='Div12' style={{ display: "inline" }}>
+
+                  <div class="P-icon" onClick={editProfileIcon}>
+                    <FontAwesomeIcon icon={faUser} size="9x" style={{ color: "#c2858e" }} />
+                  </div>
+                  <br></br>
+                  <hr></hr>
+                  <div className='btns'>
+                    <button className='btn' onClick={openEditWindow}>Edit Profile</button>
+                    <button className='btn' onClick={openViewHistory}>View Donation History</button></div>
+
+                </div>
+              </center>
+            </div>
+
+
+            <div className='div2'>
+              <Link to="/donorregistration">
+                <button disabled={remaining > 0}
+                  className={remaining > 0 ? "btn-disabled" : "btn-active"} name="btn" >
+                  <FontAwesomeIcon
+                    icon={faDroplet}
+                    size="4x"
+                    style={{ color: "#e9dddd", paddingTop: "20px" }}
+                  /></button>
+                <label for="btn" style={{ marginLeft: "30px" }}><h3>Donate</h3></label>
+              </Link>
+              <Link to="/donorlist">
+                <button className='admin' name="btn"><FontAwesomeIcon
+                  icon={faBriefcaseMedical}
+                  size="5x"
+                  style={{ color: "#e9dddd", paddingTop: "20px" }}
+                /></button>
+                <label for="btn" style={{ marginLeft: "30px" }}><h3>Receive</h3></label>
+              </Link>
+            </div>
+
+
+
+            {/*---------------change profile photo----------*/}
+            {showPopup && (
+              <div className="popup-overlay" onClick={() => setShowPopup(false)}>
+                <div className="popup-box" onClick={(e) => e.stopPropagation()}>
+                  <h3>Change Profile Photo</h3>
+
+                  <div className="popup-option">
+                    <FontAwesomeIcon icon={faCamera} /> Take Photo
+                  </div>
+
+                  <div className="popup-option">
+                    <FontAwesomeIcon icon={faImage} /> Choose from Gallery
+                  </div>
+
+                  <div
+                    className="popup-cancel"
+                    onClick={() => setShowPopup(false)}
+                  >
+                    Cancel
+                  </div>
+                </div>
+              </div>
+            )}
+
+
+
+          </div>
+        )}
+
+        {showDiv == 2 && (
+          <div className='main-div2' style={{ height: "400px" }}>
+            <div>
+
+              <b>Edit Profile</b><div className="close" onClick={closeEditWindow}>	&#10006;</div><br></br>
+              <hr></hr>
+            </div >
+            <div className="edit" style={{ display: "inline", }}>
+
+              <div className="e1">
+                <label id="l2" for="name">Name:</label><input type="url" name="name" value={user.name} />
+                <label id="l2" for="dob">DOB:</label><input type="date" name="dob" />
+              </div>
+              <div className="e1">
+                <label id="l2" for="number">Phone:</label><input type="number" name="number" value={user.phone} />
+                <label id="l2" for="email">Email:</label><input type="email" name="email" value={user.email} />
+              </div>
+              <div className="e1">
+                <label id="l2" for="city">City:</label><input type="" name="city" />
+                <select><option selected>Select Gen</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Others</option></select>
+              </div>
+
+
+              <div class="health-box">
+                <h3>Health Status </h3>
+
+                <div className="leftDiv">
+                  <div class="health-item">
+
+                    <input type="checkbox" id="illness" checked={user.healthStatus.noRecentIllness} />
+                    <label for="illness">No Recent Illness</label>
+                  </div>
+
+                  <div class="health-item">
+                    <input type="checkbox" id="smoker" checked={user.healthStatus.nonSmoker} />
+                    <label for="smoker">Non-Smoker</label>
+                  </div>
+
+                  <div class="health-item">
+                    <input type="checkbox" id="infection" checked={user.healthStatus.noInfectiousDisease} />
+                    <label for="infection">No Infectious Disease</label>
+                  </div>
+                </div>
+                <div className="rightDiv">
+                  <div class="">
+                    <label for="lastDonation">Last Donation Date</label>
+                    <input type="date" id="lastDonation" value={user.lastDonationDate?.split("T")[0]} />
+                  </div>
+                  <div className='btns'>
+                    <button className='btn2' >Save</button>
+                    <button className='btn2'>Cancel</button></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/*----------------------View History---------------------------*/}
+
+        {showDiv == 3 && (
+          <div className='main-div2' style={{ height: "400px" }}>
+            <div>
+              <h3>View Donation History</h3><div className="close" onClick={closeEditWindow}>	&#10006;</div><br></br>
+
+            </div >
+            <hr></hr>
+            <div>
+              <table>
+                <tr>
+                  <th>Donations</th>
+                  <th>Date</th>
+                  <th>Hospital</th>
+                  <th>City</th>
+                  <th>Type</th>
+                  <th>Status</th>
+
+                </tr>
+                <tr>
+                  <td>#1</td>
+                  <td>12 Feb 2026</td>
+                  <td>Apollo</td>
+                  <td>Bhubaneshwar</td>
+                  <td>Whole Blood</td>
+                  <td>✅ Completed</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        )}
+      </body>
+    </>
+
+  );
+}
+
+export default User;
+
+//  <label id="l2" for="weight">Weight:</label><input type="reset" name="weight"/>
+//           <checkBox><option selected>Heath Status</option>
+//                   <option>Smoking</option>
+//                   <option>Female</option>
+//                   <option>Others</option></select>
+
+// <div className='d21'>  <ul className='reqDetails'>
+//   <div className='main'>Heath Status</div>
+//   <div>Reported as Healthy</div><hr></hr>
+//   <li>No Recent illness    ✅</li><hr></hr>
+//   <li>Non-Smoker           ✅</li><hr></hr>
+//   <li>No Infection Disease ✅</li>
+//   </ul></div>
+
+
+import React, { useEffect, useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import "./Sign_UP.css";
+
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+import {
+  faUser,
+  faDroplet,
+  faBriefcaseMedical,
+  faCamera,
+  faImage,
+  faBell,
+  faLocationCrosshairs
+} from "@fortawesome/free-solid-svg-icons";
+
+
+const User = () => {
+
+  const navigate = useNavigate();
+  const dropdownRef = useRef(null);
+
+
+  const [user, setUser] = useState(null);
+  const [remainingDays, setRemainingDays] = useState(0);
+
+
+  const [page, setPage] = useState(1);
+  const [showPopup, setShowPopup] = useState(false);
+  const [openNotification, setOpenNotification] = useState(false);
+
+
+  // Check login
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login");
+    }
+  }, [navigate]);
+
+
+  // Calculate donation eligibility
+  const calculateDaysLeft = (date, gap) => {
+
+    const lastDonation = new Date(date);
+    lastDonation.setHours(0, 0, 0, 0);
+
+    const nextDonation = new Date(lastDonation);
+    nextDonation.setDate(nextDonation.getDate() + gap);
+
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+
+    return Math.ceil(
+      (nextDonation - today) /
+      (1000 * 60 * 60 * 24)
+    );
+  };
+
+
+  // Fetch user profile
+  useEffect(() => {
+
+    const fetchProfile = async () => {
+
+      try {
+
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(
+          "http://localhost:50333/profile",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
+
+
+        if (!response.ok) {
+          throw new Error("Unable to fetch profile");
+        }
+
+
+        const data = await response.json();
+
+
+        setUser(data);
+
+
+        if (data.lastDonationDate) {
+          const days = calculateDaysLeft(
+            data.lastDonationDate,
+            90
+          );
+
+          setRemainingDays(days);
+        }
+
+
+      } catch (error) {
+
+        console.error(error);
+        navigate("/login");
+
+      }
+
+    };
+
+
+    fetchProfile();
+
+
+    // Close notification dropdown
+    const handleClickOutside = (event) => {
+
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+
+        setOpenNotification(false);
+
+      }
+    };
+
+
+    document.addEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+
+
+    return () => {
+
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+
+    };
+
+
+  }, [navigate]);
+
+
+  if (!user) {
+    return <h2>Loading Profile...</h2>;
+  }
+
+
+  const toggleNotification = () => {
+    setOpenNotification(prev => !prev);
+  };
+
+
+  const openEdit = () => {
+    setPage(2);
+  };
+
+
+  const openHistory = () => {
+    setPage(3);
+  };
+
+
+  const closeWindow = () => {
+    setPage(1);
+  };
+
+
+  //   app.js----------------------------------------------------
+
+
+  import './App.css';
+import SignUP from './components/Sign_UP';
+import ProtectedRoute from './components/ProtectedRoute';
+import DR  from './components/DonerRegistration';
+import DL from './components/DonorList';
+import SBL from './components/StokeBloodList';
+import OSBL from './components/OutStrokeBList';
+import EBL from './components/ExchangeBList';
+import NI from './components/NgoInfo';
+import NL from './components/NgoList';
+import AN from './components/AddNgo';
+import HM from './components/HomePage';
+import Login from './components/login';
+import UR from './components/user';
+import Nav from  './components/Nav';
+import BR from './components/BloodRecord';
+import Inv from './components/Inventory';
+import DP from './components/donorProfile';
+import DI from './components/donorInfo';
+import RI from './components/reqInfo';
+import HS from './components/hospitals';
+import AH from './components/AddHospitals';
+import RR from './components/receiverRegistration';
+import AdminLogin from './components/AdminLogin';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import {Link} from 'react-router-dom'
+
+function App() {
+
+
+  return (
+    <BrowserRouter>
+     
+      <div className="App">
+        
+          <div class="page-container">
+            <div id="header">
+          <h2>Blood Bank Management System</h2>
+        </div>
+         <Nav />
+        <div class="content">
+        <div id="body">
+ 
+          <Routes>
+            <Route path="/signup" element={<SignUP />} />
+           
+            <Route path="/" element={
+             <div className='mainDiv'> 
+               
+          <Link to="/signup">
+          <button className='user'  ><h3>User</h3></button>
+         </Link>
+          <Link to="/admin">
+          <button className='admin' ><h3>Admin</h3></button>
+          </Link>
+          <Link to="/signup">
+          <button className='admin' ><h3>Hospital</h3></button>
+          </Link>
+          <Link to="/signup">
+          <button className='admin' ><h3>Organisations</h3></button>
+          </Link>
+          
+             </div>
+
+              
+   } />
+           
+            <Route path="/donorregistration" element={<DR />} />
+            <Route path="/donorlist" element={<DL />} />
+            <Route path="/stokebloodlist" element={<SBL />} />
+            <Route path="/outstrokebloodlist" element={<OSBL />} />
+            <Route path="/exchangebloodlist" element={<EBL />} />
+            <Route path="/ngolist" element={<NL />} />
+            <Route path="/ngoinfo" element={<NI />} />
+            <Route path="/addngo" element={<AN />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/admin" element={<AdminLogin />} />
+             <Route path="/user" element={
+              <ProtectedRoute>
+              <UR />
+              </ProtectedRoute>
+              } />
+            <Route path="/home" element={
+              <ProtectedRoute>
+                <HM/>
+              </ProtectedRoute>
+              } />
+            <Route path="/inv" element={<Inv/>} />
+            <Route path="/donorProfile" element={
+             <ProtectedRoute>
+              <DP/>
+             </ProtectedRoute> 
+             } />
+            <Route path="/bloodRecord" element={<BR/>} />
+            <Route path="/donor/home/donorInfo" element={
+              <ProtectedRoute>
+                <DI/>
+              </ProtectedRoute>
+              } />
+            <Route path="/reqInfo" element={
+              <ProtectedRoute>
+                <RI/>
+              </ProtectedRoute>
+              } />
+            <Route path="/receiverRegistration" element={<RR/>} />
+            <Route path="/hospitals" element={
+              <ProtectedRoute>
+                <HS/>
+              </ProtectedRoute>
+              } />
+            <Route path="/addhospitals" element={<AH/>} />
+          </Routes>
+        </div>
+</div>
+
+        <div id="footer">
+         
+          <h4 align="center">Copyright@myproject.com</h4>
+        </div>
+      </div>
+      </div>
+      
+    </BrowserRouter>
+  );
+}
+
+export default App;
+/*
+ <BrowserRouter>
+     <Nav />
+     <Routes>
+      
+      <Route element={<PrivateComponent />}>
+      <Route path="/" element={<ProductList/>}/>
+     <Route path="/add" element={<AddProduct/>}/>
+     <Route path="/update/:id" element={<UpdateProduct/>}/>
+     <Route path="/logout" element={<h1>Logout Component</h1>}/>
+     <Route path="/profile" element={<h1>Profile Component</h1>}/>
+     <Route path="/main" element={<Main/>}/>
+     </Route>
+    <Route path="/signUp" element={<SignUp/>}/>
+    <Route path="/Login" element= {<Login />} />
+     </Routes>
+   </BrowserRouter>
+   <Footer />
+   
+    </div>
+  );
+}
+ 
+
+
+ <center>
+            <Link to="/signup">
+          <button className='user'  >
+            <h3>User</h3>
+            </button>
+         </Link>
+          <Link to="/signup">
+          <button className='admin' ><h3>Admin</h3></button>
+          </Link>
+          <Link to="/signup">
+          <button className='admin' ><h3>Hospital</h3></button>
+          </Link>
+          <Link to="/signup">
+          <button className='admin' ><h3>Organisations</h3></button>
+          </Link>
+          </center>
+*/
